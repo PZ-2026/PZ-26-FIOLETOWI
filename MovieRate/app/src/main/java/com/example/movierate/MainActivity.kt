@@ -58,7 +58,8 @@ fun AppNavigation() {
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
                         }
-                    }
+                    },
+                    navController = navController
                 )
             }
         },
