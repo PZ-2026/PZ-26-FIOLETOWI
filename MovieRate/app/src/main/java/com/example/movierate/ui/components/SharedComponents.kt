@@ -113,7 +113,7 @@ fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: N
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                     MenuItemText("Panel Admin", Icons.Default.Lock) {
-                        // Action for admin panel
+                        navController?.navigate("admin")
                         onDismiss()
                     }
 

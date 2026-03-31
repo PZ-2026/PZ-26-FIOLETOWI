@@ -24,6 +24,7 @@ import com.example.movierate.ui.screens.LoginScreen
 import com.example.movierate.ui.screens.SearchScreen
 import com.example.movierate.ui.screens.ListsScreen
 import com.example.movierate.ui.screens.ProfileScreen
+import com.example.movierate.ui.screens.AdminScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,6 +104,9 @@ fun AppNavigation() {
                         }
                     }
                 )
+            }
+            composable("admin") {
+                AdminScreen()
             }
         }
     }
