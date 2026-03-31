@@ -22,6 +22,7 @@ import com.example.movierate.ui.components.DarkBackground
 import com.example.movierate.ui.screens.HomeScreen
 import com.example.movierate.ui.screens.LoginScreen
 import com.example.movierate.ui.screens.SearchScreen
+import com.example.movierate.ui.screens.ListsScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,6 +89,9 @@ fun AppNavigation() {
             }
             composable("search") {
                 SearchScreen()
+            }
+            composable("lists") {
+                ListsScreen()
             }
         }
     }
