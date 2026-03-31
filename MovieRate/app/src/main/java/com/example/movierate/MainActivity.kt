@@ -4,14 +4,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.movierate.ui.theme.MovieRateTheme
+import com.example.movierate.ui.components.MainTopAppBar
+import com.example.movierate.ui.components.MovieRateBottomNav
+import com.example.movierate.ui.components.DarkBackground
+import com.example.movierate.ui.screens.HomeScreen
+import com.example.movierate.ui.screens.LoginScreen
+import com.example.movierate.ui.screens.SearchScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,25 +42,53 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route ?: "login"
+    
+    val isFullScreen = currentRoute == "login"
 
-    NavHost(navController = navController, startDestination = "login") {
-        composable("login") {
-            LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+    Scaffold(
+        containerColor = DarkBackground,
+        topBar = {
+            if (!isFullScreen) {
+                MainTopAppBar(
+                    onLogout = {
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
-                }
-            )
+                )
+            }
+        },
+        bottomBar = {
+            if (!isFullScreen) {
+                MovieRateBottomNav(
+                    currentRoute = currentRoute,
+                    navController = navController
+                )
+            }
         }
-        composable("home") {
-            HomeScreen(
-                onLogout = {
-                    navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
+    ) { paddingValues ->
+        NavHost(
+            navController = navController, 
+            startDestination = "login",
+            modifier = Modifier.padding(paddingValues)
+        ) {
+            composable("login") {
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
                     }
-                }
-            )
+                )
+            }
+            composable("home") {
+                HomeScreen()
+            }
+            composable("search") {
+                SearchScreen()
+            }
         }
     }
 }
