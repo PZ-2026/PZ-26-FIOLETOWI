@@ -7,6 +7,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -320,7 +321,7 @@ fun AdminReviewsContent() {
     
     ReviewModCard("Nieodpowiednia treść w recenzji", "Film: Breaking Bad • Użytkownik: user123", "Recenzja zawiera wulgaryzmy...")
     Spacer(modifier = Modifier.height(16.dp))
-    ReviewModCard("Spam w recenzji", "Film: Incepcja • Użytkownik: spammer99", "Link do zewnętrznej...")
+    ReviewModCard("Spam w recenzji", "Film: Incepcja • Użytkownik: spammer99", "Link do zewnętrznej strony...")
 }
 
 @Composable
@@ -330,33 +331,31 @@ fun ReviewModCard(title: String, subtitle: String, contentPreview: String) {
         colors = CardDefaults.cardColors(containerColor = DarkBackground),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(subtitle, color = Color.Gray, fontSize = 13.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(contentPreview, color = Color.LightGray, fontSize = 14.sp)
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(subtitle, color = Color.Gray, fontSize = 13.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(contentPreview, color = Color.LightGray, fontSize = 14.sp)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = {},
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E2532), contentColor = Color.White),
                     shape = RoundedCornerShape(6.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text("Zatwierdź", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
                 Button(
                     onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444), contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7F1D1D), contentColor = Color.White),
                     shape = RoundedCornerShape(6.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text("Usuń", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
