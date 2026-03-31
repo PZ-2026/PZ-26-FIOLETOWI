@@ -23,6 +23,7 @@ import com.example.movierate.ui.screens.HomeScreen
 import com.example.movierate.ui.screens.LoginScreen
 import com.example.movierate.ui.screens.SearchScreen
 import com.example.movierate.ui.screens.ListsScreen
+import com.example.movierate.ui.screens.ProfileScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -92,6 +93,15 @@ fun AppNavigation() {
             }
             composable("lists") {
                 ListsScreen()
+            }
+            composable("profile") {
+                ProfileScreen(
+                    onLogout = {
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
             }
         }
     }
