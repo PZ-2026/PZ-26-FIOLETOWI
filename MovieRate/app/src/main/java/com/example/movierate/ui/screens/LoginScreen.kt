@@ -16,13 +16,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.movierate.ui.components.*
+import com.example.movierate.data.remote.LoginRequest
+import com.example.movierate.data.remote.RetrofitClient
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -97,11 +101,19 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         .height(50.dp)
                         .background(brush = PrimaryGradientBrush, shape = RoundedCornerShape(8.dp))
                         .clickable {
-                            if (email == "admin@test.pl" && password == "1234") {
-                                errorMessage = false
-                                onLoginSuccess()
-                            } else {
-                                errorMessage = true
+                            coroutineScope.launch {
+                                try {
+                                    val response = RetrofitClient.api.login(LoginRequest(email, password))
+                                    if (response.isSuccessful) {
+                                        errorMessage = ""
+                                        onLoginSuccess()
+                                    } else {
+                                        val errBody = response.errorBody()?.string() ?: "Błąd serwera"
+                                        errorMessage = "Brak autoryzacji: $errBody (Kod: ${response.code()})"
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = "Błąd sieci: ${e.message}"
+                                }
                             }
                         },
                     contentAlignment = Alignment.Center
@@ -114,10 +126,10 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     )
                 }
 
-                if (errorMessage) {
+                if (errorMessage.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Błędny e-mail lub hasło!",
+                        text = errorMessage,
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
