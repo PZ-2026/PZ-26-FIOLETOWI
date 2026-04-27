@@ -88,51 +88,18 @@ CREATE TABLE IF NOT EXISTS movie_cast (
     PRIMARY KEY (movie_id, person_id, role_id)
 );
 
-DO $$ 
-BEGIN 
-  BEGIN
-    ALTER TABLE movies ADD CONSTRAINT uq_movies_title_release_type UNIQUE (title, release_year, type);
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE user_lists ADD CONSTRAINT uq_user_lists_user_name UNIQUE (user_id, name);
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE movie_genres ADD CONSTRAINT fk_movie_genres_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE movie_genres ADD CONSTRAINT fk_movie_genres_genre FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE ratings ADD CONSTRAINT fk_ratings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE ratings ADD CONSTRAINT fk_ratings_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE reviews ADD CONSTRAINT fk_reviews_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE reviews ADD CONSTRAINT fk_reviews_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE user_lists ADD CONSTRAINT fk_user_lists_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE user_list_items ADD CONSTRAINT fk_user_list_items_list FOREIGN KEY (list_id) REFERENCES user_lists(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE user_list_items ADD CONSTRAINT fk_user_list_items_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE reports ADD CONSTRAINT fk_reports_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_person FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-  BEGIN
-    ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE;
-  EXCEPTION WHEN others THEN END;
-END $$;
+ALTER TABLE movies ADD CONSTRAINT uq_movies_title_release_type UNIQUE (title, release_year, type);
+ALTER TABLE user_lists ADD CONSTRAINT uq_user_lists_user_name UNIQUE (user_id, name);
+ALTER TABLE movie_genres ADD CONSTRAINT fk_movie_genres_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
+ALTER TABLE movie_genres ADD CONSTRAINT fk_movie_genres_genre FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE;
+ALTER TABLE ratings ADD CONSTRAINT fk_ratings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE ratings ADD CONSTRAINT fk_ratings_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
+ALTER TABLE reviews ADD CONSTRAINT fk_reviews_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE reviews ADD CONSTRAINT fk_reviews_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
+ALTER TABLE user_lists ADD CONSTRAINT fk_user_lists_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE user_list_items ADD CONSTRAINT fk_user_list_items_list FOREIGN KEY (list_id) REFERENCES user_lists(id) ON DELETE CASCADE;
+ALTER TABLE user_list_items ADD CONSTRAINT fk_user_list_items_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
+ALTER TABLE reports ADD CONSTRAINT fk_reports_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
+ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_person FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE;
+ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE;

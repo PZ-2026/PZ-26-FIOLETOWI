@@ -1,9 +1,10 @@
-package com.example.movierate_backend.service;
+package com.example.movierate_backend;
 
 import com.example.movierate_backend.dto.AuthResponse;
 import com.example.movierate_backend.dto.RegisterRequest;
 import com.example.movierate_backend.model.User;
 import com.example.movierate_backend.repository.UserRepository;
+import com.example.movierate_backend.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class AuthServiceTest {
+class AuthServiceRegisterTest {
 
     @Mock
     private UserRepository userRepository;
@@ -31,7 +32,7 @@ class AuthServiceTest {
     private AuthService authService;
 
     @Test
-    void register_hashesPasswordAndAssignsDefaultUserRole() {
+    void register_hashesPassword_andAssignsDefaultRole() {
         RegisterRequest request = new RegisterRequest();
         request.setUsername("anna");
         request.setEmail("anna@example.com");

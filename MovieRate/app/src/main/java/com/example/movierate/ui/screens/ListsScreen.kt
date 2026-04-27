@@ -21,10 +21,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.movierate.Movie
-import com.example.movierate.mockMovies
+import com.example.movierate.model.Movie
 import com.example.movierate.ui.components.DarkBackground
 import com.example.movierate.ui.components.DarkSurface
+
+private val previewListMovies = listOf(
+    Movie(1, "Inception", "Dreams within dreams", 9.0, 2010, "Film"),
+    Movie(2, "Breaking Bad", "Drug empire story", 9.5, 2008, "Serial"),
+    Movie(3, "Interstellar", "Space exploration", 8.9, 2014, "Film"),
+    Movie(4, "The Dark Knight", "Batman vs Joker", 9.2, 2008, "Film")
+)
 
 enum class ListCategory(val title: String, val subtitle: String, val color: Color, val icon: ImageVector) {
     TO_WATCH("Do obejrzenia", "Filmy i seriale, które planujesz obejrzeć", Color(0xFF3B82F6), Icons.Default.DateRange),
@@ -99,7 +105,7 @@ fun ListsScreen(modifier: Modifier = Modifier) {
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         contentPadding = PaddingValues(horizontal = 24.dp)
                     ) {
-                        itemsIndexed(mockMovies) { index, movie ->
+                        itemsIndexed(previewListMovies) { index, movie ->
                             Top10Card(movie, index + 1, selectedCategory.color)
                         }
                     }
@@ -108,7 +114,7 @@ fun ListsScreen(modifier: Modifier = Modifier) {
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         contentPadding = PaddingValues(horizontal = 24.dp)
                     ) {
-                        items(mockMovies) { movie ->
+                        items(previewListMovies) { movie ->
                             MovieCardList(movie)
                         }
                     }
