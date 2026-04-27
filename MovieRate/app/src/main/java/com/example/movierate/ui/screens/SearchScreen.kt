@@ -2,7 +2,20 @@ package com.example.movierate.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -11,8 +24,27 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,38 +52,55 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.items
-import com.example.movierate.ui.components.*
-import com.example.movierate.Movie
-import com.example.movierate.mockMovies
+import com.example.movierate.data.remote.RetrofitClient
+import com.example.movierate.model.Movie
+import com.example.movierate.model.toUiModel
+import com.example.movierate.ui.components.DarkBackground
+import com.example.movierate.ui.components.DarkSurface
+import com.example.movierate.ui.components.TextBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(modifier: Modifier = Modifier) {
     var searchQuery by remember { mutableStateOf("") }
     var showFilters by remember { mutableStateOf(false) }
+    var movies by remember { mutableStateOf<List<Movie>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    var selectedGenre by remember { mutableStateOf("Wszystkie gatunki") }
     var selectedType by remember { mutableStateOf("Wszystkie typy") }
     var selectedYear by remember { mutableStateOf("Wszystkie lata") }
 
-    val genres = listOf("Wszystkie gatunki", "Dramat", "Kryminał", "Akcja", "Sci-Fi", "Thriller", "Fantasy", "Przygodowy", "Horror", "Komedia")
     val types = listOf("Wszystkie typy", "Film", "Serial")
-    val years = listOf("Wszystkie lata", "2019", "2016", "2014", "2013", "2011", "2010", "2008", "2005", "1994", "1972")
+    val years = listOf("Wszystkie lata", "2023", "2022", "2021", "2019", "2017", "2016", "2014", "2013", "2011", "2010", "2008", "2005", "2001", "1999", "1994", "1972")
 
-    val filteredMovies = mockMovies.filter { movie ->
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.moviesApi.getMovies()
+            if (response.isSuccessful) {
+                movies = response.body().orEmpty().map { it.toUiModel() }
+                errorMessage = null
+            } else {
+                errorMessage = "Nie udalo sie pobrac listy. Kod: ${response.code()}"
+            }
+        } catch (e: Exception) {
+            errorMessage = "Blad polaczenia z backendem: ${e.message}"
+        } finally {
+            isLoading = false
+        }
+    }
+
+    val filteredMovies = movies.filter { movie ->
         (searchQuery.isBlank() || movie.title.contains(searchQuery, ignoreCase = true)) &&
-        (selectedType == "Wszystkie typy" || movie.type == selectedType) &&
-        (selectedYear == "Wszystkie lata" || movie.year.toString() == selectedYear)
+            (selectedType == "Wszystkie typy" || movie.type == selectedType) &&
+            (selectedYear == "Wszystkie lata" || movie.year.toString() == selectedYear)
     }
 
     Column(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Szukaj filmów i seriali",
+                text = "Szukaj filmow i seriali",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -65,7 +114,7 @@ fun SearchScreen(modifier: Modifier = Modifier) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Wpisz tytuł filmu lub serialu", color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    placeholder = { Text("Wpisz tytul filmu lub serialu", color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -102,12 +151,6 @@ fun SearchScreen(modifier: Modifier = Modifier) {
             if (showFilters) {
                 Spacer(modifier = Modifier.height(24.dp))
                 CustomDropdownMenu(
-                    label = "Gatunek",
-                    options = genres,
-                    selectedOption = selectedGenre,
-                    onOptionSelected = { selectedGenre = it }
-                )
-                CustomDropdownMenu(
                     label = "Typ",
                     options = types,
                     selectedOption = selectedType,
@@ -127,20 +170,34 @@ fun SearchScreen(modifier: Modifier = Modifier) {
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(text = "${filteredMovies.size}", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(text = "wyników", color = Color.Gray, fontSize = 16.sp)
+                Text(text = "wynikow", color = Color.Gray, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(filteredMovies) { movie ->
-                SearchMovieCard(movie = movie)
+        when {
+            isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = TextBlue)
+                }
+            }
+            errorMessage != null -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = errorMessage ?: "", color = MaterialTheme.colorScheme.error)
+                }
+            }
+            else -> {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(filteredMovies) { movie ->
+                        SearchMovieCard(movie = movie)
+                    }
+                }
             }
         }
     }
@@ -183,16 +240,16 @@ fun CustomDropdownMenu(
                     .menuAnchor()
             )
 
-            ExposedDropdownMenu(
+            androidx.compose.material3.ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 modifier = Modifier.background(Color(0xFF151A23))
             ) {
                 options.forEach { selectionOption ->
                     DropdownMenuItem(
-                        text = { 
+                        text = {
                             Row(
-                                modifier = Modifier.fillMaxWidth(), 
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -228,9 +285,16 @@ fun SearchMovieCard(movie: Movie) {
                     .height(200.dp)
                     .background(Color(0xFF0D1017))
             ) {
-                
+                Text(
+                    text = movie.title,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(16.dp)
+                )
             }
-            
+
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = movie.title,
@@ -241,31 +305,25 @@ fun SearchMovieCard(movie: Movie) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Star,
                         contentDescription = null,
                         tint = Color(0xFFFFC107),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.height(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = movie.rating.toString(),
+                        text = String.format("%.1f", movie.rating),
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "(${(movie.rating * 300).toInt()})",
-                        color = Color.Gray,
-                        fontSize = 12.sp
-                    )
                 }
-                
+
                 Spacer(modifier = Modifier.height(10.dp))
-                
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(
                         color = Color(0xFF151A23),
@@ -292,9 +350,9 @@ fun SearchMovieCard(movie: Movie) {
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -309,12 +367,12 @@ fun SearchMovieCard(movie: Movie) {
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.height(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Lista", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                    
+
                     Button(
                         onClick = {},
                         modifier = Modifier
@@ -324,7 +382,7 @@ fun SearchMovieCard(movie: Movie) {
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(0.dp)
                     ) {
-                        Icon(Icons.Default.FavoriteBorder, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.FavoriteBorder, contentDescription = null, tint = Color.White, modifier = Modifier.height(18.dp))
                     }
                 }
             }

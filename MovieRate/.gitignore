@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Local Gradle/runtime caches and logs
+.gradle-user-home/
+backend.log
+backend.err.log

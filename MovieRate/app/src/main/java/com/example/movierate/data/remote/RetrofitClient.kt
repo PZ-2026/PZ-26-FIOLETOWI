@@ -1,17 +1,25 @@
 package com.example.movierate.data.remote
 
+import com.example.movierate.BuildConfig
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // adb reverse tcp:8080 tcp:8080 → localhost na telefonie = komputer
-    private const val BASE_URL = "http://localhost:8080"
+    private const val DEFAULT_BASE_URL = "http://10.0.2.2:8080"
+    private val baseUrl = BuildConfig.API_BASE_URL.ifBlank { DEFAULT_BASE_URL }
 
-    val api: AuthApi by lazy {
+    private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(AuthApi::class.java)
+    }
+
+    val api: AuthApi by lazy {
+        retrofit.create(AuthApi::class.java)
+    }
+
+    val moviesApi: MoviesApi by lazy {
+        retrofit.create(MoviesApi::class.java)
     }
 }

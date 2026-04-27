@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS movies (
     description TEXT,
     release_year INT,
     type VARCHAR(20) CHECK (type IN ('MOVIE', 'SERIES')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_movies_title_release_type UNIQUE (title, release_year, type)
 );
 
 CREATE TABLE IF NOT EXISTS genres (
@@ -50,7 +51,8 @@ CREATE TABLE IF NOT EXISTS user_lists (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     name VARCHAR(255),
-    type VARCHAR(20) CHECK (type IN ('WATCHLIST', 'WATCHED', 'FAVORITES', 'CUSTOM'))
+    type VARCHAR(20) CHECK (type IN ('WATCHLIST', 'WATCHED', 'FAVORITES', 'CUSTOM')),
+    CONSTRAINT uq_user_lists_user_name UNIQUE (user_id, name)
 );
 
 CREATE TABLE IF NOT EXISTS user_list_items (
@@ -88,6 +90,12 @@ CREATE TABLE IF NOT EXISTS movie_cast (
 
 DO $$ 
 BEGIN 
+  BEGIN
+    ALTER TABLE movies ADD CONSTRAINT uq_movies_title_release_type UNIQUE (title, release_year, type);
+  EXCEPTION WHEN others THEN END;
+  BEGIN
+    ALTER TABLE user_lists ADD CONSTRAINT uq_user_lists_user_name UNIQUE (user_id, name);
+  EXCEPTION WHEN others THEN END;
   BEGIN
     ALTER TABLE movie_genres ADD CONSTRAINT fk_movie_genres_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
   EXCEPTION WHEN others THEN END;
