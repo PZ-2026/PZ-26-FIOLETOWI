@@ -1,0 +1,48 @@
+2026-05-11 12:26:48.805 [http-nio-8080-exec-4] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:26:48.806 [http-nio-8080-exec-4] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:26:48.806 [http-nio-8080-exec-7] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:26:48.806 [http-nio-8080-exec-7] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:26:48.951 [http-nio-8080-exec-3] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:26:48.952 [http-nio-8080-exec-3] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:26:49.066 [http-nio-8080-exec-6] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:26:49.068 [http-nio-8080-exec-6] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:26:49.656 [http-nio-8080-exec-4] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:26:49.656 [http-nio-8080-exec-7] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:26:49.656 [http-nio-8080-exec-6] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:26:49.656 [http-nio-8080-exec-3] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:26:49.826 [http-nio-8080-exec-3] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-11 12:26:49.838 [http-nio-8080-exec-7] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-11 12:26:49.842 [http-nio-8080-exec-4] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-11 12:26:49.847 [http-nio-8080-exec-6] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-11 12:26:53.152 [http-nio-8080-exec-8] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:26:53.152 [http-nio-8080-exec-8] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:26:53.157 [http-nio-8080-exec-8] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:26:53.297 [http-nio-8080-exec-8] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-11 12:31:33.948 [http-nio-8080-exec-10] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:31:33.948 [http-nio-8080-exec-10] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:31:33.955 [http-nio-8080-exec-10] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:31:34.038 [http-nio-8080-exec-10] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-11 12:33:23.718 [http-nio-8080-exec-3] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:33:23.718 [http-nio-8080-exec-3] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:33:23.728 [http-nio-8080-exec-3] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:33:23.818 [http-nio-8080-exec-3] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-11 12:33:24.737 [http-nio-8080-exec-7] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:33:24.737 [http-nio-8080-exec-7] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:33:24.749 [http-nio-8080-exec-7] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:33:24.849 [http-nio-8080-exec-7] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-11 12:33:25.349 [http-nio-8080-exec-4] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:33:25.352 [http-nio-8080-exec-4] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:33:25.353 [http-nio-8080-exec-4] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:33:25.449 [http-nio-8080-exec-4] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-11 12:33:25.962 [http-nio-8080-exec-6] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:33:25.962 [http-nio-8080-exec-6] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:33:25.971 [http-nio-8080-exec-6] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:33:26.070 [http-nio-8080-exec-6] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-11 12:33:26.578 [http-nio-8080-exec-8] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:33:26.578 [http-nio-8080-exec-8] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:33:26.578 [http-nio-8080-exec-8] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:33:26.678 [http-nio-8080-exec-8] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-11 12:34:03.756 [http-nio-8080-exec-5] TRACE c.e.m.service.AuthService - Received login request
+2026-05-11 12:34:03.756 [http-nio-8080-exec-5] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-11 12:34:03.756 [http-nio-8080-exec-5] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-11 12:34:03.848 [http-nio-8080-exec-5] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
