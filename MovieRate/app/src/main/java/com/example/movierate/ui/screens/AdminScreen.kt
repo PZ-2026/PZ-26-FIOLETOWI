@@ -1,5 +1,6 @@
 package com.example.movierate.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -24,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import com.example.movierate.ui.components.DarkBackground
 import com.example.movierate.ui.components.DarkSurface
 import com.example.movierate.ui.components.TextBlue
+import com.example.movierate.data.remote.ReportDownloadManager
+import kotlinx.coroutines.launch
 
 enum class AdminCategory(
     val title: String, 
@@ -107,7 +111,7 @@ fun AdminScreen(modifier: Modifier = Modifier) {
                         AdminCategory.MOVIES -> AdminMoviesContent()
                         AdminCategory.USERS -> AdminUsersContent()
                         AdminCategory.REVIEWS -> AdminReviewsContent()
-                        AdminCategory.SYSTEM -> AdminSystemContent()
+                        AdminCategory.SYSTEM -> AdminReportsContent()
                     }
                 }
             }
@@ -360,6 +364,95 @@ fun ReviewModCard(title: String, subtitle: String, contentPreview: String) {
                     Text("Usuń", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun AdminReportsContent() {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var generatingReportTitle by remember { mutableStateOf<String?>(null) }
+
+    fun generateReport(title: String, topRatedLimit: Int? = null) {
+        generatingReportTitle = title
+        coroutineScope.launch {
+            val result = ReportDownloadManager.generateMovieReport(
+                context = context,
+                title = title,
+                generatedBy = "Panel administratora",
+                topRatedLimit = topRatedLimit
+            )
+
+            result
+                .onSuccess { report ->
+                    Toast.makeText(context, "Zapisano raport: ${report.fileName}", Toast.LENGTH_LONG).show()
+                    if (!ReportDownloadManager.openPdf(context, report)) {
+                        Toast.makeText(context, "Brak aplikacji do otwarcia PDF", Toast.LENGTH_LONG).show()
+                    }
+                }
+                .onFailure { error ->
+                    Toast.makeText(context, error.message ?: "Nie udalo sie wygenerowac raportu", Toast.LENGTH_LONG).show()
+                }
+
+            generatingReportTitle = null
+        }
+    }
+
+    Text("Generowanie raportow", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    Spacer(modifier = Modifier.height(4.dp))
+    Text("Generuj i pobieraj raporty systemowe w formacie PDF", color = Color.Gray, fontSize = 14.sp)
+
+    Spacer(modifier = Modifier.height(24.dp))
+
+    AdminReportButton(
+        title = "Top 100 filmow",
+        isLoading = generatingReportTitle == "Top 100 filmow",
+        enabled = generatingReportTitle == null,
+        onClick = { generateReport("Top 100 filmow", topRatedLimit = 100) }
+    )
+    Spacer(modifier = Modifier.height(12.dp))
+    AdminReportButton(
+        title = "Raport aktywnosci",
+        isLoading = generatingReportTitle == "Raport aktywnosci",
+        enabled = generatingReportTitle == null,
+        onClick = { generateReport("Raport aktywnosci") }
+    )
+    Spacer(modifier = Modifier.height(12.dp))
+    AdminReportButton(
+        title = "Statystyki gatunkow",
+        isLoading = generatingReportTitle == "Statystyki gatunkow",
+        enabled = generatingReportTitle == null,
+        onClick = { generateReport("Statystyki gatunkow") }
+    )
+}
+
+@Composable
+fun AdminReportButton(
+    title: String,
+    isLoading: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth().height(60.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = DarkBackground),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = Color.White
+                )
+            } else {
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+            }
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
     }
 }

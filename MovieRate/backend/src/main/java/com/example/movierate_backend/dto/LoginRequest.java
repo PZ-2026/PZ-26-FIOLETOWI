@@ -4,11 +4,11 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public class LoginRequest {
-    @NotBlank
-    @Email
+    @NotBlank(message = "Podaj adres e-mail")
+    @Email(message = "Podaj poprawny adres e-mail")
     private String email;
 
-    @NotBlank
+    @NotBlank(message = "Podaj haslo")
     private String password;
 
     public String getEmail() { return email; }

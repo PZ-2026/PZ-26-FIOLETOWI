@@ -1,12 +1,14 @@
 package com.example.movierate.ui.screens
 
-import androidx.compose.foundation.BorderStroke
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -22,10 +25,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.movierate.ui.components.DarkBackground
 import com.example.movierate.ui.components.DarkSurface
-import com.example.movierate.ui.components.TextBlue
+import com.example.movierate.data.remote.AuthResponse
+import com.example.movierate.data.remote.ReportDownloadManager
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
-fun ProfileScreen(modifier: Modifier = Modifier, onLogout: () -> Unit) {
+fun ProfileScreen(
+    modifier: Modifier = Modifier,
+    user: AuthResponse?,
+    onLogout: () -> Unit
+) {
     var isEditing by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -38,11 +49,13 @@ fun ProfileScreen(modifier: Modifier = Modifier, onLogout: () -> Unit) {
         item {
             if (isEditing) {
                 EditProfileCard(
+                    user = user,
                     onSave = { isEditing = false },
                     onCancel = { isEditing = false }
                 )
             } else {
                 ProfileHeaderCard(
+                    user = user,
                     onEditClick = { isEditing = true },
                     onLogout = onLogout
                 )
@@ -62,13 +75,19 @@ fun ProfileScreen(modifier: Modifier = Modifier, onLogout: () -> Unit) {
         }
 
         item {
-            ReportsCard()
+            ReportsCard(user = user)
         }
     }
 }
 
 @Composable
-fun ProfileHeaderCard(onEditClick: () -> Unit, onLogout: () -> Unit) {
+fun ProfileHeaderCard(user: AuthResponse?, onEditClick: () -> Unit, onLogout: () -> Unit) {
+    val username = user?.username ?: "Nieznany użytkownik"
+    val email = user?.email ?: "Brak adresu e-mail"
+    val role = user?.role?.let { formatRole(it) } ?: "Użytkownik"
+    val joinedAt = user?.createdAt?.let { formatJoinedDate(it) } ?: "Brak daty dołączenia"
+    val initial = username.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = DarkSurface),
@@ -86,14 +105,14 @@ fun ProfileHeaderCard(onEditClick: () -> Unit, onLogout: () -> Unit) {
                     .background(Color(0xFF2563EB), shape = CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("J", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                Text(initial, color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Jan Kowalski",
+                    text = username,
                     color = Color.White,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
@@ -104,7 +123,7 @@ fun ProfileHeaderCard(onEditClick: () -> Unit, onLogout: () -> Unit) {
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
-                        text = "Użytkownik",
+                        text = role,
                         color = Color.Black,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -118,7 +137,7 @@ fun ProfileHeaderCard(onEditClick: () -> Unit, onLogout: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Email, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("jan.kowalski@example.com", color = Color.Gray, fontSize = 14.sp)
+                Text(email, color = Color.Gray, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -126,7 +145,7 @@ fun ProfileHeaderCard(onEditClick: () -> Unit, onLogout: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.DateRange, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Dołączył: 15 stycznia 2024", color = Color.Gray, fontSize = 14.sp)
+                Text("Dołączył: $joinedAt", color = Color.Gray, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -155,7 +174,7 @@ fun ProfileHeaderCard(onEditClick: () -> Unit, onLogout: () -> Unit) {
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)
                 ) {
-                    Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Wyloguj", maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
@@ -165,7 +184,11 @@ fun ProfileHeaderCard(onEditClick: () -> Unit, onLogout: () -> Unit) {
 }
 
 @Composable
-fun EditProfileCard(onSave: () -> Unit, onCancel: () -> Unit) {
+fun EditProfileCard(user: AuthResponse?, onSave: () -> Unit, onCancel: () -> Unit) {
+    val username = user?.username ?: ""
+    val email = user?.email ?: ""
+    val initial = username.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = DarkSurface),
@@ -199,7 +222,7 @@ fun EditProfileCard(onSave: () -> Unit, onCancel: () -> Unit) {
                         .background(Color(0xFF2563EB), shape = CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("J", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                    Text(initial, color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(onClick = { /* TODO */ }) {
@@ -210,9 +233,9 @@ fun EditProfileCard(onSave: () -> Unit, onCancel: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = "Jan Kowalski",
+                value = username,
                 onValueChange = { },
-                label = { Text("Imię i nazwisko", color = Color.White, fontWeight = FontWeight.Bold) },
+                label = { Text("Nazwa użytkownika", color = Color.White, fontWeight = FontWeight.Bold) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = DarkBackground,
@@ -228,7 +251,7 @@ fun EditProfileCard(onSave: () -> Unit, onCancel: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = "jan.kowalski@example.com",
+                value = email,
                 onValueChange = { },
                 label = { Text("Email", color = Color.White, fontWeight = FontWeight.Bold) },
                 modifier = Modifier.fillMaxWidth(),
@@ -278,7 +301,7 @@ fun ProfileStatsGrid() {
                 title = "Obejrzane",
                 count = "127",
                 subtitle = "filmów i seriali",
-                icon = Icons.Default.List,
+                icon = Icons.AutoMirrored.Filled.List,
                 iconTint = Color(0xFF3B82F6),
                 modifier = Modifier.weight(1f)
             )
@@ -487,6 +510,109 @@ fun ActivityItemRow(
 }
 
 @Composable
+fun ReportsCard(user: AuthResponse?) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var generatingReportTitle by remember { mutableStateOf<String?>(null) }
+
+    fun generateReport(title: String) {
+        generatingReportTitle = title
+        coroutineScope.launch {
+            val result = ReportDownloadManager.generateMovieReport(
+                context = context,
+                title = title,
+                generatedBy = user?.username ?: user?.email ?: "MovieRate"
+            )
+
+            result
+                .onSuccess { report ->
+                    Toast.makeText(context, "Zapisano raport: ${report.fileName}", Toast.LENGTH_LONG).show()
+                    if (!ReportDownloadManager.openPdf(context, report)) {
+                        Toast.makeText(context, "Brak aplikacji do otwarcia PDF", Toast.LENGTH_LONG).show()
+                    }
+                }
+                .onFailure { error ->
+                    Toast.makeText(context, error.message ?: "Nie udalo sie wygenerowac raportu", Toast.LENGTH_LONG).show()
+                }
+
+            generatingReportTitle = null
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
+            Text("Raporty", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Generuj raporty swojej aktywnosci", color = Color.Gray, fontSize = 14.sp)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            ReportButton(
+                title = "Moje oceny",
+                isLoading = generatingReportTitle == "Moje oceny",
+                enabled = generatingReportTitle == null,
+                onClick = { generateReport("Moje oceny") }
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            ReportButton(
+                title = "Moje recenzje",
+                isLoading = generatingReportTitle == "Moje recenzje",
+                enabled = generatingReportTitle == null,
+                onClick = { generateReport("Moje recenzje") }
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            ReportButton(
+                title = "Raport aktywnosci",
+                isLoading = generatingReportTitle == "Raport aktywnosci",
+                enabled = generatingReportTitle == null,
+                onClick = { generateReport("Raport aktywnosci") }
+            )
+        }
+    }
+}
+
+@Composable
+fun ReportButton(
+    title: String,
+    isLoading: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF151A23)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = Color.White
+                )
+            } else {
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        }
+    }
+}
+
+@Suppress("unused")
+@Composable
 fun ReportsCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -528,5 +654,23 @@ fun ReportButton(title: String) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
         }
+    }
+}
+
+private fun formatRole(role: String): String {
+    return when (role.uppercase()) {
+        "ADMIN" -> "Administrator"
+        else -> "Użytkownik"
+    }
+}
+
+private fun formatJoinedDate(createdAt: String): String {
+    return try {
+        val inputFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+        val outputFormatter = SimpleDateFormat("d MMMM yyyy", Locale.forLanguageTag("pl-PL"))
+        val date = inputFormatter.parse(createdAt.substringBefore("."))
+        date?.let(outputFormatter::format) ?: createdAt.substringBefore("T")
+    } catch (_: Exception) {
+        createdAt.substringBefore("T")
     }
 }
