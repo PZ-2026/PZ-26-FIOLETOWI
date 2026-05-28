@@ -1,8 +1,7 @@
 package com.example.movierate.data.remote
 
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.POST
+import retrofit2.http.*
 
 interface AuthApi {
     @POST("/api/auth/login")
@@ -10,4 +9,7 @@ interface AuthApi {
 
     @POST("/api/auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
+
+    @PUT("/api/auth/profile")
+    suspend fun updateProfile(@Query("userId") userId: Long, @Body request: UpdateProfileRequest): Response<AuthResponse>
 }

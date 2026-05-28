@@ -28,31 +28,63 @@ object ReportDownloadManager {
         context: Context,
         title: String,
         generatedBy: String?,
-        topRatedLimit: Int? = null
+        topRatedLimit: Int? = null,
+        userId: Long? = null
     ): Result<DownloadedReport> = withContext(Dispatchers.IO) {
         runCatching {
-            val moviesResponse = if (topRatedLimit == null) {
-                RetrofitClient.moviesApi.getMovies()
-            } else {
-                RetrofitClient.moviesApi.getTopRatedMovies(topRatedLimit)
+            val reportItems: List<MovieReportItemRequest> = when {
+                userId != null && title == "Moje oceny" -> {
+                    val response = RetrofitClient.moviesApi.getUserRatedMovies(userId)
+                    if (!response.isSuccessful) {
+                        error("Nie udało się pobrać ocenionych filmów: HTTP ${response.code()}")
+                    }
+                    response.body().orEmpty()
+                }
+                userId != null && title == "Moje recenzje" -> {
+                    val response = RetrofitClient.moviesApi.getUserReviewedMovies(userId)
+                    if (!response.isSuccessful) {
+                        error("Nie udało się pobrać recenzji: HTTP ${response.code()}")
+                    }
+                    response.body().orEmpty()
+                }
+                topRatedLimit != null -> {
+                    val response = RetrofitClient.moviesApi.getTopRatedMovies(topRatedLimit)
+                    if (!response.isSuccessful) {
+                        error("Nie udało się pobrać filmów: HTTP ${response.code()}")
+                    }
+                    response.body().orEmpty().map { movie ->
+                        MovieReportItemRequest(
+                            title = movie.title,
+                            releaseYear = movie.releaseYear,
+                            type = movie.type,
+                            averageRating = movie.averageRating,
+                            userRating = null,
+                            reviewContent = null
+                        )
+                    }
+                }
+                else -> {
+                    val response = RetrofitClient.moviesApi.getMovies()
+                    if (!response.isSuccessful) {
+                        error("Nie udało się pobrać filmów: HTTP ${response.code()}")
+                    }
+                    response.body().orEmpty().map { movie ->
+                        MovieReportItemRequest(
+                            title = movie.title,
+                            releaseYear = movie.releaseYear,
+                            type = movie.type,
+                            averageRating = movie.averageRating,
+                            userRating = null,
+                            reviewContent = null
+                        )
+                    }
+                }
             }
 
-            if (!moviesResponse.isSuccessful) {
-                error("Nie udało się pobrać filmów: HTTP ${moviesResponse.code()}")
-            }
-
-            val movies = moviesResponse.body().orEmpty()
             val reportRequest = MovieReportRequest(
                 title = title,
                 generatedBy = generatedBy,
-                movies = movies.map { movie ->
-                    MovieReportItemRequest(
-                        title = movie.title,
-                        releaseYear = movie.releaseYear,
-                        type = movie.type,
-                        averageRating = movie.averageRating
-                    )
-                }
+                movies = reportItems
             )
 
             val reportResponse = RetrofitClient.reportsApi.generateMovieReport(reportRequest)

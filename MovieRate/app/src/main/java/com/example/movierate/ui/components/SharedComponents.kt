@@ -29,7 +29,7 @@ val PrimaryGradientBrush = Brush.linearGradient(colors = listOf(GradientStart, G
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null) {
+fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false) {
     var menuExpanded by remember { mutableStateOf(false) }
 
     TopAppBar(
@@ -48,7 +48,8 @@ fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null) {
                 AppMenuOverlay(
                     onDismiss = { menuExpanded = false },
                     onLogout = onLogout,
-                    navController = navController
+                    navController = navController,
+                    isLoggedIn = isLoggedIn
                 )
             }
         },
@@ -57,7 +58,7 @@ fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null) {
 }
 
 @Composable
-fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: NavController?) {
+fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: NavController?, isLoggedIn: Boolean = false) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -145,7 +146,10 @@ fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: N
                     ) {
                         Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Zaloguj się", fontWeight = FontWeight.Bold)
+                        Text(
+                            if (isLoggedIn) "Wyloguj się" else "Zaloguj się",
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

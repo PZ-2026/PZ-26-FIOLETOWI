@@ -8,7 +8,9 @@ data class Movie(
     val description: String,
     val rating: Double,
     val year: Int,
-    val type: String
+    val type: String,
+    val genres: List<String> = emptyList(),
+    val imageUrl: String = ""
 )
 
 fun MovieDto.toUiModel(): Movie = Movie(
@@ -17,5 +19,7 @@ fun MovieDto.toUiModel(): Movie = Movie(
     description = description.orEmpty(),
     rating = averageRating,
     year = releaseYear ?: 0,
-    type = if (type == "SERIES") "Serial" else "Film"
+    type = if (type == "SERIES") "Serial" else "Film",
+    genres = genres ?: emptyList(),
+    imageUrl = imageUrl ?: ""
 )

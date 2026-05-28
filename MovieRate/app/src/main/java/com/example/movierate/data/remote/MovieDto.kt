@@ -6,5 +6,7 @@ data class MovieDto(
     val description: String?,
     val releaseYear: Int?,
     val type: String,
-    val averageRating: Double
+    val averageRating: Double,
+    val genres: List<String>? = null,
+    val imageUrl: String? = null
 )

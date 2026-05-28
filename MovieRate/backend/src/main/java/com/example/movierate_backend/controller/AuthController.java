@@ -3,6 +3,8 @@ package com.example.movierate_backend.controller;
 import com.example.movierate_backend.dto.AuthResponse;
 import com.example.movierate_backend.dto.LoginRequest;
 import com.example.movierate_backend.dto.RegisterRequest;
+import com.example.movierate_backend.dto.UpdateProfileRequest;
+import com.example.movierate_backend.model.User;
 import com.example.movierate_backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,25 @@ public class AuthController {
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
             AuthResponse response = authService.register(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestParam Long userId, @Valid @RequestBody UpdateProfileRequest request) {
+        try {
+            User updated = authService.updateProfile(userId, request);
+            AuthResponse response = new AuthResponse(
+                    updated.getId(),
+                    "Profil zaktualizowany",
+                    updated.getUsername(),
+                    updated.getEmail(),
+                    updated.getRole(),
+                    updated.getCreatedAt() != null ? updated.getCreatedAt().toString() : null,
+                    updated.getProfilePictureUrl()
+            );
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

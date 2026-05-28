@@ -82,9 +82,11 @@ public class PdfReportGenerator {
         appendRect(page, TABLE_X, TABLE_TOP_MARGIN - 8, TABLE_WIDTH, 28, "0.12 0.16 0.22", true);
         appendText(page, "#", TABLE_X + 12, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
         appendText(page, "Title", TABLE_X + 42, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-        appendText(page, "Year", TABLE_X + 320, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-        appendText(page, "Type", TABLE_X + 374, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-        appendText(page, "Rating", TABLE_X + 450, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
+        appendText(page, "Year", TABLE_X + 270, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
+        appendText(page, "Type", TABLE_X + 320, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
+        appendText(page, "Avg", TABLE_X + 380, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
+        appendText(page, "User", TABLE_X + 430, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
+        appendText(page, "Review", TABLE_X + 480, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
     }
 
     private void renderMovieRow(StringBuilder page, MovieReportItem movie, int index, int y) {
@@ -93,10 +95,12 @@ public class PdfReportGenerator {
         }
         appendRect(page, TABLE_X, y - 7, TABLE_WIDTH, 1, "0.88 0.91 0.95", true);
         appendText(page, String.valueOf(index), TABLE_X + 12, y, 9, "/F2", "0.24 0.28 0.34");
-        appendText(page, truncate(blankToDefault(movie.title(), "Untitled"), 42), TABLE_X + 42, y, 9, "/F2", "0.08 0.12 0.18");
-        appendText(page, valueOrDash(movie.releaseYear()), TABLE_X + 320, y, 9, "/F2", "0.24 0.28 0.34");
-        appendText(page, truncate(blankToDefault(movie.type(), "-"), 10), TABLE_X + 374, y, 9, "/F2", "0.24 0.28 0.34");
-        appendText(page, formatRating(movie.averageRating()), TABLE_X + 450, y, 9, "/F1", "0.08 0.12 0.18");
+        appendText(page, truncate(blankToDefault(movie.title(), "Untitled"), 32), TABLE_X + 42, y, 9, "/F2", "0.08 0.12 0.18");
+        appendText(page, valueOrDash(movie.releaseYear()), TABLE_X + 270, y, 9, "/F2", "0.24 0.28 0.34");
+        appendText(page, truncate(blankToDefault(movie.type(), "-"), 8), TABLE_X + 320, y, 9, "/F2", "0.24 0.28 0.34");
+        appendText(page, formatRating(movie.averageRating()), TABLE_X + 380, y, 9, "/F1", "0.08 0.12 0.18");
+        appendText(page, valueOrDash(movie.userRating()), TABLE_X + 430, y, 9, "/F1", "0.08 0.12 0.18");
+        appendText(page, truncate(blankToDefault(movie.reviewContent(), ""), 12), TABLE_X + 480, y, 9, "/F2", "0.24 0.28 0.34");
     }
 
     private void appendText(StringBuilder page, String text, int x, int y, int fontSize, String font) {

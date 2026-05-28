@@ -37,7 +37,9 @@ public class ReportService {
                 movie.title(),
                 movie.releaseYear(),
                 movie.type(),
-                movie.averageRating()
+                movie.averageRating(),
+                movie.userRating(),
+                movie.reviewContent()
         );
     }
 }
