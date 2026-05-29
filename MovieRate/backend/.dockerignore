@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+build/
+.gradle-user-home/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Test reports
+out/
+
+# Class files (compiled manually)
+*.class

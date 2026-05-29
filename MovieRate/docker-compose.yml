@@ -1,0 +1,52 @@
+services:
+  # ============================================================
+  # PostgreSQL Database
+  # ============================================================
+  db:
+    image: postgres:16-alpine
+    container_name: movierate-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: movierate
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d movierate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - movierate-network
+
+  # ============================================================
+  # Spring Boot Backend
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: movierate-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Use the Docker profile so the app connects to the db container
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - movierate-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  movierate-network:
+    driver: bridge
