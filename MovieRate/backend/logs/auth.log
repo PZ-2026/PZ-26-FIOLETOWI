@@ -46,3 +46,146 @@
 2026-05-11 12:34:03.756 [http-nio-8080-exec-5] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
 2026-05-11 12:34:03.756 [http-nio-8080-exec-5] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
 2026-05-11 12:34:03.848 [http-nio-8080-exec-5] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 14:28:12.021 [http-nio-8080-exec-2] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 14:28:12.021 [http-nio-8080-exec-2] DEBUG c.e.m.service.AuthService - Normalized login email=t***@test.com
+2026-05-28 14:28:12.338 [http-nio-8080-exec-2] WARN  c.e.m.service.AuthService - Login failed because user was not found email=t***@test.com
+2026-05-28 14:35:54.054 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 14:35:54.054 [http-nio-0.0.0.0-8080-exec-1] DEBUG c.e.m.service.AuthService - Normalized login email=a***@movierate.com
+2026-05-28 14:35:54.362 [http-nio-0.0.0.0-8080-exec-1] WARN  c.e.m.service.AuthService - Login failed because user was not found email=a***@movierate.com
+2026-05-28 14:37:44.401 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 14:37:44.402 [http-nio-0.0.0.0-8080-exec-3] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 14:37:44.411 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 14:37:44.484 [http-nio-0.0.0.0-8080-exec-3] WARN  c.e.m.service.AuthService - Login failed because password did not match email=a***@example.com
+2026-05-28 14:38:16.411 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 14:38:16.411 [http-nio-0.0.0.0-8080-exec-2] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 14:38:16.412 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 14:38:16.485 [http-nio-0.0.0.0-8080-exec-2] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 15:03:06.777 [http-nio-0.0.0.0-8080-exec-7] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 15:03:06.777 [http-nio-0.0.0.0-8080-exec-7] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 15:03:06.780 [http-nio-0.0.0.0-8080-exec-7] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 15:03:06.850 [http-nio-0.0.0.0-8080-exec-7] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 15:07:42.709 [http-nio-0.0.0.0-8080-exec-5] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 15:07:42.709 [http-nio-0.0.0.0-8080-exec-5] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 15:07:42.711 [http-nio-0.0.0.0-8080-exec-5] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 15:07:42.779 [http-nio-0.0.0.0-8080-exec-5] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 15:25:36.200 [http-nio-0.0.0.0-8080-exec-9] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 15:25:36.200 [http-nio-0.0.0.0-8080-exec-9] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 15:25:36.202 [http-nio-0.0.0.0-8080-exec-9] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 15:25:36.273 [http-nio-0.0.0.0-8080-exec-9] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 15:26:39.821 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 15:26:39.821 [http-nio-0.0.0.0-8080-exec-1] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 15:26:39.824 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 15:26:39.893 [http-nio-0.0.0.0-8080-exec-1] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 15:29:09.971 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 15:29:09.972 [http-nio-0.0.0.0-8080-exec-3] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 15:29:09.975 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 15:29:10.053 [http-nio-0.0.0.0-8080-exec-3] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 15:56:10.460 [http-nio-0.0.0.0-8080-exec-9] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 15:56:10.460 [http-nio-0.0.0.0-8080-exec-9] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 15:56:10.786 [http-nio-0.0.0.0-8080-exec-9] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 15:56:10.859 [http-nio-0.0.0.0-8080-exec-9] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 16:10:15.894 [http-nio-0.0.0.0-8080-exec-6] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 16:10:15.894 [http-nio-0.0.0.0-8080-exec-6] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 16:10:15.899 [http-nio-0.0.0.0-8080-exec-6] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 16:10:15.983 [http-nio-0.0.0.0-8080-exec-6] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 16:20:05.025 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 16:20:05.025 [http-nio-0.0.0.0-8080-exec-1] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 16:20:05.378 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 16:20:05.456 [http-nio-0.0.0.0-8080-exec-1] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 16:35:30.492 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 16:35:30.493 [http-nio-0.0.0.0-8080-exec-1] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 16:35:30.900 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 16:35:30.975 [http-nio-0.0.0.0-8080-exec-1] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 16:47:19.019 [http-nio-0.0.0.0-8080-exec-7] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 16:47:19.024 [http-nio-0.0.0.0-8080-exec-7] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 16:47:19.345 [http-nio-0.0.0.0-8080-exec-7] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 16:47:19.422 [http-nio-0.0.0.0-8080-exec-7] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 17:19:23.155 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 17:19:23.156 [http-nio-0.0.0.0-8080-exec-3] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 17:19:23.494 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 17:19:23.567 [http-nio-0.0.0.0-8080-exec-3] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 17:38:58.008 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 17:38:58.008 [http-nio-0.0.0.0-8080-exec-3] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 17:38:58.325 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 17:38:58.404 [http-nio-0.0.0.0-8080-exec-3] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 17:42:08.801 [http-nio-0.0.0.0-8080-exec-4] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 17:42:08.801 [http-nio-0.0.0.0-8080-exec-4] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 17:42:08.804 [http-nio-0.0.0.0-8080-exec-4] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 17:42:08.874 [http-nio-0.0.0.0-8080-exec-4] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 17:43:08.217 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 17:43:08.217 [http-nio-0.0.0.0-8080-exec-2] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 17:43:08.220 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 17:43:08.288 [http-nio-0.0.0.0-8080-exec-2] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 18:36:04.590 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 18:36:04.590 [http-nio-0.0.0.0-8080-exec-1] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 18:36:04.907 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 18:36:04.970 [http-nio-0.0.0.0-8080-exec-1] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 19:14:34.660 [http-nio-0.0.0.0-8080-exec-6] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 19:14:35.080 [http-nio-0.0.0.0-8080-exec-6] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 19:14:47.814 [http-nio-0.0.0.0-8080-exec-7] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 19:14:47.814 [http-nio-0.0.0.0-8080-exec-7] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 19:14:47.817 [http-nio-0.0.0.0-8080-exec-7] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 19:14:47.913 [http-nio-0.0.0.0-8080-exec-7] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 19:14:58.703 [http-nio-0.0.0.0-8080-exec-5] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 19:14:58.708 [http-nio-0.0.0.0-8080-exec-5] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 19:15:12.752 [http-nio-0.0.0.0-8080-exec-6] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 19:15:12.752 [http-nio-0.0.0.0-8080-exec-6] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 19:15:12.753 [http-nio-0.0.0.0-8080-exec-6] WARN  c.e.m.service.AuthService - Login failed because user was not found email=a***@example.com
+2026-05-28 19:15:16.775 [http-nio-0.0.0.0-8080-exec-7] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 19:15:16.775 [http-nio-0.0.0.0-8080-exec-7] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 19:15:16.777 [http-nio-0.0.0.0-8080-exec-7] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 19:15:16.847 [http-nio-0.0.0.0-8080-exec-7] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 19:15:23.362 [http-nio-0.0.0.0-8080-exec-5] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 19:15:23.368 [http-nio-0.0.0.0-8080-exec-5] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 19:37:05.518 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 19:37:05.518 [http-nio-0.0.0.0-8080-exec-1] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 19:37:05.828 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 19:37:05.900 [http-nio-0.0.0.0-8080-exec-1] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 19:37:21.110 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 19:37:21.191 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Password updated for userId=10
+2026-05-28 19:37:21.191 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 19:37:21.212 [http-nio-0.0.0.0-8080-exec-2] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 19:37:29.833 [http-nio-0.0.0.0-8080-exec-4] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 19:37:29.833 [http-nio-0.0.0.0-8080-exec-4] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-05-28 19:37:29.835 [http-nio-0.0.0.0-8080-exec-4] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-05-28 19:37:29.909 [http-nio-0.0.0.0-8080-exec-4] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN
+2026-05-28 19:37:40.744 [http-nio-0.0.0.0-8080-exec-5] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 19:37:40.817 [http-nio-0.0.0.0-8080-exec-5] TRACE c.e.m.service.AuthService - Password updated for userId=10
+2026-05-28 19:37:40.817 [http-nio-0.0.0.0-8080-exec-5] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 19:37:40.820 [http-nio-0.0.0.0-8080-exec-5] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 19:43:42.353 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 19:43:42.353 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 19:43:53.570 [http-nio-0.0.0.0-8080-exec-4] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 19:43:53.579 [http-nio-0.0.0.0-8080-exec-4] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 19:46:48.586 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Received login request
+2026-05-28 19:46:48.587 [http-nio-0.0.0.0-8080-exec-1] DEBUG c.e.m.service.AuthService - Normalized login email=u***@example.com
+2026-05-28 19:46:48.902 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Found user account for login email=u***@example.com
+2026-05-28 19:46:48.976 [http-nio-0.0.0.0-8080-exec-1] INFO  c.e.m.service.AuthService - User login successful email=u***@example.com role=USER
+2026-05-28 19:48:18.213 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 19:48:18.213 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 19:53:30.438 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Updating profile for userId=1
+2026-05-28 19:53:30.770 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Profile picture updated for userId=1
+2026-05-28 19:53:30.795 [http-nio-0.0.0.0-8080-exec-2] INFO  c.e.m.service.AuthService - Profile updated successfully userId=1
+2026-05-28 19:55:04.815 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 19:55:04.831 [http-nio-0.0.0.0-8080-exec-3] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 19:55:04.831 [http-nio-0.0.0.0-8080-exec-3] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 20:04:30.391 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 20:04:30.732 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 20:04:30.743 [http-nio-0.0.0.0-8080-exec-2] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 20:08:02.736 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 20:08:02.760 [http-nio-0.0.0.0-8080-exec-1] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 20:08:02.760 [http-nio-0.0.0.0-8080-exec-1] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 20:12:56.458 [http-nio-0.0.0.0-8080-exec-9] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 20:12:56.462 [http-nio-0.0.0.0-8080-exec-9] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 20:12:56.463 [http-nio-0.0.0.0-8080-exec-9] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 20:17:11.811 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 20:17:11.811 [http-nio-0.0.0.0-8080-exec-2] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 20:17:11.928 [http-nio-0.0.0.0-8080-exec-2] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 20:25:21.922 [http-nio-0.0.0.0-8080-exec-8] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 20:25:21.983 [http-nio-0.0.0.0-8080-exec-8] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 20:25:21.993 [http-nio-0.0.0.0-8080-exec-8] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10
+2026-05-28 20:26:40.940 [http-nio-0.0.0.0-8080-exec-6] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 20:26:40.946 [http-nio-0.0.0.0-8080-exec-6] WARN  c.e.m.service.AuthService - Profile update failed: email already taken email=a***@example.com
+2026-05-28 20:30:10.328 [http-nio-0.0.0.0-8080-exec-9] TRACE c.e.m.service.AuthService - Updating profile for userId=10
+2026-05-28 20:30:10.343 [http-nio-0.0.0.0-8080-exec-9] TRACE c.e.m.service.AuthService - Profile picture updated for userId=10
+2026-05-28 20:30:10.343 [http-nio-0.0.0.0-8080-exec-9] INFO  c.e.m.service.AuthService - Profile updated successfully userId=10

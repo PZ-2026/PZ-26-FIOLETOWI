@@ -3,6 +3,7 @@ package com.example.movierate_backend.service;
 import com.example.movierate_backend.dto.AuthResponse;
 import com.example.movierate_backend.dto.LoginRequest;
 import com.example.movierate_backend.dto.RegisterRequest;
+import com.example.movierate_backend.dto.UpdateProfileRequest;
 import com.example.movierate_backend.model.User;
 import com.example.movierate_backend.repository.UserRepository;
 import org.mindrot.jbcrypt.BCrypt;
@@ -47,11 +48,13 @@ public class AuthService {
             if (match) {
                 logger.info("User login successful email={} role={}", maskedEmail, user.getRole());
                 return new AuthResponse(
+                        user.getId(),
                         "Login successful",
                         user.getUsername(),
                         user.getEmail(),
                         user.getRole(),
-                        user.getCreatedAt().toString()
+                        user.getCreatedAt().toString(),
+                        user.getProfilePictureUrl()
                 );
             }
 
@@ -102,12 +105,51 @@ public class AuthService {
         }
 
         return new AuthResponse(
+                savedUser.getId(),
                 "Registration successful",
                 savedUser.getUsername(),
                 savedUser.getEmail(),
                 savedUser.getRole(),
-                savedUser.getCreatedAt().toString()
+                savedUser.getCreatedAt().toString(),
+                null
         );
+    }
+
+    public User updateProfile(Long userId, UpdateProfileRequest request) {
+        logger.trace("Updating profile for userId={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    logger.warn("Profile update failed: user not found id={}", userId);
+                    return new IllegalArgumentException("Użytkownik nie znaleziony");
+                });
+
+        // Check if email is already taken by another user
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail().trim().toLowerCase());
+        if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
+            logger.warn("Profile update failed: email already taken email={}", maskEmail(request.getEmail()));
+            throw new IllegalArgumentException("Adres e-mail jest już zajęty");
+        }
+
+        user.setUsername(request.getUsername().trim());
+        user.setEmail(request.getEmail().trim().toLowerCase());
+
+        // Update password if provided
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            String hashedPassword = BCrypt.hashpw(request.getPassword(), BCrypt.gensalt());
+            user.setPasswordHash(hashedPassword);
+            logger.trace("Password updated for userId={}", userId);
+        }
+
+        // Update profile picture URL if provided
+        if (request.getProfilePictureUrl() != null) {
+            user.setProfilePictureUrl(request.getProfilePictureUrl());
+            logger.trace("Profile picture updated for userId={}", userId);
+        }
+
+        User savedUser = userRepository.save(user);
+        logger.info("Profile updated successfully userId={}", userId);
+        return savedUser;
     }
 
     private String maskEmail(String email) {

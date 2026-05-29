@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     role VARCHAR(20) NOT NULL CHECK (role IN ('USER', 'ADMIN')),
     is_blocked BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    profile_picture_url TEXT
 );
 
 CREATE TABLE IF NOT EXISTS movies (
@@ -60,6 +61,7 @@ CREATE TABLE IF NOT EXISTS user_list_items (
     list_id INT NOT NULL,
     movie_id INT NOT NULL,
     position INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (list_id, movie_id)
 );
 

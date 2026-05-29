@@ -1,12 +1,11 @@
 package com.example.movierate.data.remote
 
-import com.example.movierate.BuildConfig
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    private const val DEFAULT_BASE_URL = "http://10.0.2.2:8080"
-    private val baseUrl = BuildConfig.API_BASE_URL.ifBlank { DEFAULT_BASE_URL }
+    private const val DEFAULT_BASE_URL = "http://10.219.99.244:8080"
+    private val baseUrl = DEFAULT_BASE_URL
 
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
@@ -25,5 +24,17 @@ object RetrofitClient {
 
     val reportsApi: ReportsApi by lazy {
         retrofit.create(ReportsApi::class.java)
+    }
+
+    val listsApi: ListsApi by lazy {
+        retrofit.create(ListsApi::class.java)
+    }
+
+    val userApi: UserApi by lazy {
+        retrofit.create(UserApi::class.java)
+    }
+
+    val adminApi: AdminApi by lazy {
+        retrofit.create(AdminApi::class.java)
     }
 }

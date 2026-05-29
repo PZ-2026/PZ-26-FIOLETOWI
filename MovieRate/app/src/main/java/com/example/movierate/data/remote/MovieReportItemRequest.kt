@@ -5,4 +5,6 @@ data class MovieReportItemRequest(
     val releaseYear: Int?,
     val type: String?,
     val averageRating: Double?,
+    val userRating: Int? = null,
+    val reviewContent: String? = null,
 )

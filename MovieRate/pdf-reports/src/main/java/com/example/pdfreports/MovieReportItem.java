@@ -4,6 +4,8 @@ public record MovieReportItem(
         String title,
         Integer releaseYear,
         String type,
-        Double averageRating
+        Double averageRating,
+        Integer userRating,
+        String reviewContent
 ) {
 }
