@@ -8,17 +8,32 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Serwis statystyczno-zarządzający ukierunkowany na wyciągnięcie specyficznych informacji
+ * o użyciu i działaniach zalogowanej osoby.
+ */
 @Service
 public class UserService {
 
     private final JdbcTemplate jdbcTemplate;
     private final UserRepository userRepository;
 
+    /**
+     * Podstawowy konstruktor warstwy serwisowej profilu.
+     * @param jdbcTemplate rdzeń SQL używany w większości statystycznych agregatów
+     * @param userRepository standardowe repozytorium użytkowników (Spring Data)
+     */
     public UserService(JdbcTemplate jdbcTemplate, UserRepository userRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.userRepository = userRepository;
     }
 
+    /**
+     * Pozwala ocenić stopień "zaangażowania" danego użytkownika zliczając ilości z poszczególnych modułów.
+     * Zwraca m.in. licznik obejrzanych, ocenionych filmów czy utworzonych recenzji publicznych.
+     * @param userId poszukiwany członek serwisu
+     * @return zgromadzony blok danych liczbowych UserStatsResponse
+     */
     public UserStatsResponse getUserStats(Long userId) {
         Long watchedCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM user_list_items uli " +
@@ -50,6 +65,12 @@ public class UserService {
         );
     }
 
+    /**
+     * Przeczesuje powiązane oceny i wyłuskuje powtarzające się najczęściej gatunki filmowe
+     * przez co ustala pewien gust użytkownika.
+     * @param userId unikatowy id profilu
+     * @return zliczająca lista powtarzalności dla różnych klas gatunkowych z malejącym licznikiem (od najbardziej lubianych)
+     */
     public List<GenreStatResponse> getUserGenres(Long userId) {
         String sql = """
                 SELECT g.name, COUNT(*) AS count
@@ -64,6 +85,12 @@ public class UserService {
                 new GenreStatResponse(rs.getString("name"), rs.getLong("count")), userId);
     }
 
+    /**
+     * Tworzy wielozłączną tablicę (UNION) symulującą tablicę ogłoszeniową / oś czasu.
+     * Pokazuje chronologicznie ostatnie zachowania (np. dodanie filmu do list, wystawienie opinii, ocenienie w skali 1-10).
+     * @param userId analizowany podmiot
+     * @return do maksymalnie 10 ostatnich rekordów zdarzeń posortowanych po uniwersalnej dacie z przypisanym typem działania
+     */
     public List<ActivityResponse> getUserActivity(Long userId) {
         String sql = """
                 (SELECT 'rating' AS type, m.title AS movie_title,
@@ -92,6 +119,12 @@ public class UserService {
                 ), userId, userId, userId);
     }
 
+    /**
+     * Przeprowadza manualny proces edycji profilu na obiektach i weryfikuje ich istnienie.
+     * @param userId użytkownik nadający akcję
+     * @param request zbiór parametrów DTO dla prostej zmiany m.in. loginu
+     * @return zaktualizowany i zapisany użytkownik w repozytorium JPA
+     */
     public User updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Użytkownik nie znaleziony"));

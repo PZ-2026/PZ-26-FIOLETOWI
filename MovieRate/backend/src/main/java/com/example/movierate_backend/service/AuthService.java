@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+/**
+ * Serwis autoryzacyjny odpowiadający za logikę biznesową uwierzytelniania, rejestracji oraz manipulacji profilem.
+ * Wykorzystuje kryptografię (BCrypt) do sprawdzania i zapisywania haszy haseł.
+ */
 @Service
 public class AuthService {
 
@@ -20,10 +24,21 @@ public class AuthService {
 
     private final UserRepository userRepository;
 
+    /**
+     * Konstruktor wstrzykujący zależność UserRepository.
+     * @param userRepository mechanizm łączenia z tabelą użytkowników (Spring Data JPA)
+     */
     public AuthService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Logika logowania użytkownika. Rozwiązuje problem wielkości znaków i porównuje hasze haseł.
+     * Dodatkowo tworzy zapisy z diagnostyką logowań do panelu dewelopera (Logger).
+     * @param request żądanie ze wstrzykniętymi danymi do uwierzytelnienia (email, surowe hasło)
+     * @return udane żądanie zostaje nagrodzone poprawnym obiektem AuthResponse z metadanymi profilu
+     * @throws IllegalArgumentException w przypadku nieprawidłowego adresu e-mail lub gdy test hasła się nie powiedzie
+     */
     public AuthResponse login(LoginRequest request) {
         logger.trace("Received login request");
 
@@ -66,6 +81,13 @@ public class AuthService {
         throw new IllegalArgumentException("Nieprawidlowy adres e-mail lub haslo");
     }
 
+    /**
+     * Konfiguruje i rejestruje nowego użytkownika, dokonując przy tym podstawowej weryfikacji zajętości e-maila
+     * oraz hashowania hasła przy wykorzystaniu biblioteki BCrypt.
+     * @param request dane nadesłane w formularzu rejestracyjnym
+     * @return zatwierdzony profil zapisany do bazy danych z przypisaną domyślną rolą
+     * @throws IllegalArgumentException przy kolizji poczty email lub pustych danych
+     */
     public AuthResponse register(RegisterRequest request) {
         logger.trace("Received registration request");
 
@@ -115,6 +137,14 @@ public class AuthService {
         );
     }
 
+    /**
+     * Weryfikuje oraz dokonuje nadpisania danych w panelu profilu. Gwarantuje także mechanikę weryfikacji maila
+     * by nie nastąpiła kolizja z adresem przypisanym już do innej osoby w serwisie.
+     * @param userId konto poddawane modyfikacjom
+     * @param request zestawienie nowych i istniejących atrybutów profilu
+     * @return referencja nadpisanego obiektu użytkownika w bazie JPA
+     * @throws IllegalArgumentException jeśli użytkownik nie istnieje w bazie lub nowy mail narusza unikalność
+     */
     public User updateProfile(Long userId, UpdateProfileRequest request) {
         logger.trace("Updating profile for userId={}", userId);
 
@@ -152,6 +182,12 @@ public class AuthService {
         return savedUser;
     }
 
+    /**
+     * Narzędzie pomocnicze odpowiedzialne za maskowanie (ukrywanie) wrażliwego adresu e-mail
+     * wykorzystywanego w wyjściu logów dla dodatkowego zapewnienia bezpieczeństwa z prawem do prywatności.
+     * @param email wprowadzony czysty strumień znaków reprezentujący email
+     * @return zamazany tekst do wykorzystania w konsoli np. t***@gmail.com
+     */
     private String maskEmail(String email) {
         int atIndex = email.indexOf('@');
         if (atIndex <= 1) {

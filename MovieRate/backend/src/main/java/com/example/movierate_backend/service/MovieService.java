@@ -15,15 +15,28 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Złożony serwis zarządzający logiką domenową sekcji filmów.
+ * Pobiera dane filmowe, statystyki, powiązania gatunków oraz obsługuje proces wystawiania ocen i recenzji.
+ */
 @Service
 public class MovieService {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Konstruktor z wstrzyknięciem JDBC.
+     * @param jdbcTemplate rdzeń Spring do manipulowania surowym SQL
+     */
     public MovieService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * Zbiera posortowaną listę twórców wybranego filmu uwzględniając podział na role.
+     * @param movieId identyfikator filmu
+     * @return zmapowani członkowie obsady w kolejności od reżysera przez aktorów
+     */
     public List<CastMemberResponse> getMovieCast(Long movieId) {
         String sql = """
                 SELECT p.name, r.name AS role
@@ -46,6 +59,12 @@ public class MovieService {
         ), movieId);
     }
 
+    /**
+     * Wyciąga aktualny wskaźnik i zsumowaną uśrednioną ocenę danego filmu, jak i ocenę konkretnego usera jeśli ją wystawił.
+     * @param movieId identyfikator sprawdzanego filmu
+     * @param userId konto przypisane do zapytania
+     * @return zbiorczy obiekt wskaźników ocen filmu RatingResponse
+     */
     public RatingResponse getUserRating(Long movieId, Long userId) {
         // Get average rating
         Double avgRating = jdbcTemplate.query(
@@ -62,6 +81,15 @@ public class MovieService {
         return new RatingResponse(avgRating != null ? avgRating : 0.0, userRating);
     }
 
+    /**
+     * Obsługuje mechanizm oceniania produkcji ("gwiazdek").
+     * Zapobiega błędom i duplikacjom wykorzystując procedurę ON CONFLICT.
+     * @param movieId identyfikator docelowy
+     * @param userId użytkownik nadający ocenę
+     * @param rating wartość liczbowa oceny od 1 do 10
+     * @return zaktualizowany wynik wskaźników po wpłynięciu nowej oceny
+     * @throws IllegalArgumentException w wypadku wartości oceny spoza skali
+     */
     public RatingResponse rateMovie(Long movieId, Long userId, int rating) {
         if (rating < 1 || rating > 10) {
             throw new IllegalArgumentException("Rating must be between 1 and 10");
@@ -74,6 +102,12 @@ public class MovieService {
         return getUserRating(movieId, userId);
     }
 
+    /**
+     * Wycofuje (usuwa) decyzję o przyznaniu oceny przez użytkownika.
+     * @param movieId identyfikator filmu
+     * @param userId konto anulujące
+     * @return nowe wskaźniki bez uwzględniania usuniętej wartości
+     */
     public RatingResponse deleteRating(Long movieId, Long userId) {
         jdbcTemplate.update(
             "DELETE FROM ratings WHERE user_id = ? AND movie_id = ?",
@@ -81,10 +115,19 @@ public class MovieService {
         return getUserRating(movieId, userId);
     }
 
+    /**
+     * Agreguje i formatuje wszystkie filmy dostępne w serwisie.
+     * @return kompletna tablica obiektów MovieResponse
+     */
     public List<MovieResponse> getAllMovies() {
         return jdbcTemplate.query(baseMovieQuery() + " ORDER BY m.title ASC", this::mapMovie);
     }
 
+    /**
+     * Buduje selekcję na podstawie parametru średniej wyciągniętej w bazie danych.
+     * @param limit węższe grono np. TOP 10
+     * @return zestawienie rankingowe filmów
+     */
     public List<MovieResponse> getTopRatedMovies(int limit) {
         return jdbcTemplate.query(
                 baseMovieQuery() + " ORDER BY average_rating DESC NULLS LAST, m.title ASC LIMIT ?",
@@ -93,6 +136,11 @@ public class MovieService {
         );
     }
 
+    /**
+     * Formułuje najświeższe produkcje.
+     * @param limit liczba elementów (z reguły np. strona powitalna)
+     * @return filmy najmłodsze wiekiem premiery
+     */
     public List<MovieResponse> getNewestMovies(int limit) {
         return jdbcTemplate.query(
                 baseMovieQuery() + " ORDER BY m.release_year DESC, m.title ASC LIMIT ?",
@@ -101,6 +149,12 @@ public class MovieService {
         );
     }
 
+    /**
+     * Znajduje filmy spełniające kryterium konkretnej kategorii/gatunku m.in. Action czy Drama.
+     * @param genre podana nazwa szukanego gatunku
+     * @param limit restrykcja zliczania dla frontendu
+     * @return filmy dopasowane na bazie tabel krzyżowych movie_genres
+     */
     public List<MovieResponse> getMoviesByGenre(String genre, int limit) {
         String sql = "SELECT * FROM (" + baseMovieQuery() + ") filtered" +
                 " WHERE filtered.id IN (" +
@@ -112,6 +166,14 @@ public class MovieService {
         return jdbcTemplate.query(sql, this::mapMovie, genre, limit);
     }
 
+    /**
+     * Podstawowy skrypt wielo-zapytaniowej wyszukiwarki filmów.
+     * Elastycznie modyfikuje bazowe zapytanie po wejściowych null/nie-null zmiennych.
+     * @param query część nazwy tytułu szukana w stringu (za pomocą LIKE)
+     * @param type filtr określający czy film / serial
+     * @param year ścisły strzał w rocznik premiery
+     * @return lista pasujących kandydatów
+     */
     public List<MovieResponse> searchMovies(String query, String type, Integer year) {
         StringBuilder sql = new StringBuilder(baseMovieQuery());
         sql.append(" WHERE 1=1");
@@ -142,6 +204,11 @@ public class MovieService {
         return jdbcTemplate.query(sql.toString(), this::mapMovie, params.toArray());
     }
 
+    /**
+     * Tworzy główną instancję zapytania SELECT, łącząc oceny i konkatenuje gatunki.
+     * Narzędzie służące DRY i zmniejszeniu duplikacji zapytań SQL w innych metodach.
+     * @return ciąg zapytania
+     */
     private String baseMovieQuery() {
         return """
                 SELECT
@@ -163,6 +230,9 @@ public class MovieService {
                 """;
     }
 
+    /**
+     * Metoda przetwarzająca surowe wiersze zapytania na znormalizowany standard obiektu MovieResponse DTO.
+     */
     private MovieResponse mapMovie(ResultSet rs, int rowNum) throws SQLException {
         String genresStr = rs.getString("genres");
         List<String> genres = (genresStr != null && !genresStr.isBlank())
@@ -184,6 +254,12 @@ public class MovieService {
         );
     }
 
+    /**
+     * Wchodzi w relację z profilem autorów by wyświetlić wszystkie dopuszczone (nie moderowane - is_deleted FALSE)
+     * publiczne komentarze i recenzje dla profilu konkretnego dzieła.
+     * @param movieId identyfikator recenzowanego obiektu
+     * @return lista zebranych opinii
+     */
     public List<ReviewResponse> getMovieReviews(Long movieId) {
         String sql = """
                 SELECT rv.id, u.username, u.id AS user_id, m.title AS movie_title,
@@ -210,24 +286,49 @@ public class MovieService {
                 ), movieId);
     }
 
+    /**
+     * Bezpośrednie zapisanie stworzonej opinii użytkownika powiązanej z daną produkcją.
+     * @param movieId wpis dla filmu
+     * @param userId numer autora wpisu
+     * @param content tekstowa, właściwa recenzja dzieła
+     */
     public void addReview(Long movieId, Long userId, String content) {
         jdbcTemplate.update(
             "INSERT INTO reviews (user_id, movie_id, content) VALUES (?, ?, ?)",
             userId, movieId, content);
     }
 
+    /**
+     * Wywołuje mechanizm 'soft-delete' flagując opinie niepożądane bądź usuwane przez samego usera
+     * na logiczne is_deleted TRUE bez utraty danych archiwalnych w samej bazie.
+     * @param reviewId referencja recenzji
+     * @param userId zabezpieczenie autorskie w WHERE w celu uniemożliwienia skasowania nie swojej opinii
+     */
     public void deleteReview(Long reviewId, Long userId) {
         jdbcTemplate.update(
             "UPDATE reviews SET is_deleted = TRUE WHERE id = ? AND user_id = ?",
             reviewId, userId);
     }
 
+    /**
+     * Płynna edycja istniejacej recenzji polegająca na nowym zaktualizowaniu samego ciągu znaków
+     * pod warunkiem, że edytujący jest jej właścicielem.
+     * @param reviewId recenzja podlegająca modernizacji
+     * @param userId wymuszenie by to użytkownik był właścicielem zmian (zastępstwo klasycznej autoryzacji metodyki)
+     * @param content nowy blok opinii
+     */
     public void updateReview(Long reviewId, Long userId, String content) {
         jdbcTemplate.update(
             "UPDATE reviews SET content = ? WHERE id = ? AND user_id = ? AND is_deleted = FALSE",
             content, reviewId, userId);
     }
 
+    /**
+     * Metoda używana główie przez silnik podsumowań i statystyk w ReportService.
+     * Zbiera całą gamę ocenionych przez użytkownika dzieł by przenieść to do formy zestawień np. w wygenerowanym PDF.
+     * @param userId generujący profil użytkownik
+     * @return uproszczone pakiety gotowe do transformacji tabeli
+     */
     public List<MovieReportItemRequest> getUserRatedMovies(Long userId) {
         String sql = """
                 SELECT m.title, m.release_year, m.type,
@@ -249,6 +350,12 @@ public class MovieService {
                 ), userId);
     }
 
+    /**
+     * Tożsama funkcja w stosunku do getUserRatedMovies, z tym że skupiająca się na wyciągnięciu napisanej
+     * tekstowo recenzji do konkretnego tytułu by umieścić m.in. w archiwum pliku.
+     * @param userId badane konto
+     * @return model zawierający recenzje z ominięciem tych skasowanych
+     */
     public List<MovieReportItemRequest> getUserReviewedMovies(Long userId) {
         String sql = """
                 SELECT m.title, m.release_year, m.type,
