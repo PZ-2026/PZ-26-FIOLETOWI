@@ -9,15 +9,29 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Serwis implementujący procesy pobierania i aktualizowania playlist filmowych użytkowników
+ * bezpośrednio opierający się na zapytaniach SQL do bazy relacyjnej.
+ */
 @Service
 public class ListService {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Konstruktor dla ListService.
+     * @param jdbcTemplate rdzenna implementacja mechanizmów zapytań dla Spring JDBC
+     */
     public ListService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * Komponuje i wywołuje zapytanie pobierające podstawowe struktury z własnymi bibliotekami użytkownika (tzw. Listy).
+     * @param userId analizowane konto
+     * @param type parametr używany m.in. do odseparowania standardowych list od systemowych, może być pominięty (null)
+     * @return uformowane pakiety List wraz z obliczoną sumaryczną statystyką item_count złączeniową
+     */
     public List<UserListResponse> getUserLists(Long userId, String type) {
         String sql = """
                 SELECT ul.id, ul.name, ul.type,
@@ -36,6 +50,12 @@ public class ListService {
         return jdbcTemplate.query(sql, this::mapUserList, userId);
     }
 
+    /**
+     * Wchodzi w głęboką relację łącząc tabele movies i user_list_items celem pobrania poszczególnych elementów
+     * dopisanych do konkretnej listy wraz z ich ocenami globalnymi.
+     * @param listId identyfikator przeglądanej biblioteki
+     * @return asortyment filmowy
+     */
     public List<UserListItemResponse> getListItems(Long listId) {
         String sql = """
                 SELECT uli.id, m.id AS movie_id, m.title, m.release_year, m.type,
@@ -51,6 +71,12 @@ public class ListService {
         return jdbcTemplate.query(sql, this::mapListItem, listId);
     }
 
+    /**
+     * Zapisuje nową pozycję łączącą dany film z daną listą, z opcjonalnym ustaleniem hierarchii (position).
+     * @param listId id docelowej listy
+     * @param movieId id dodawanego filmu
+     * @param position wartość w hierarchii listy
+     */
     public void addMovieToList(Long listId, Long movieId, Integer position) {
         jdbcTemplate.update(
                 "INSERT INTO user_list_items (list_id, movie_id, position) VALUES (?, ?, ?)",
@@ -58,6 +84,11 @@ public class ListService {
         );
     }
 
+    /**
+     * Rozłącza wybrany film ze wskazaną listą kasując wpis tabeli krzyżowej.
+     * @param listId id docelowej listy
+     * @param movieId id odrzucanego filmu
+     */
     public void removeMovieFromList(Long listId, Long movieId) {
         jdbcTemplate.update(
                 "DELETE FROM user_list_items WHERE list_id = ? AND movie_id = ?",
@@ -65,6 +96,13 @@ public class ListService {
         );
     }
 
+    /**
+     * Kreuje nową jednostkę organizacyjną na koncie użytkownika.
+     * @param userId własność konta
+     * @param name wprowadzony tytuł nowej listy
+     * @param type ewentualny parametr definiujący niestandardowe zachowanie
+     * @return generowane automatycznie unikatowe id (z bazy)
+     */
     public Long createList(Long userId, String name, String type) {
         jdbcTemplate.update(
                 "INSERT INTO user_lists (user_id, name, type) VALUES (?, ?, ?)",
@@ -76,6 +114,12 @@ public class ListService {
         );
     }
 
+    /**
+     * Dokonuje bezpiecznego wykasowania stworzonej tabeli użytkownika, przedtem niszcząc wszystkie jej zależności.
+     * Zabrania usuwania tzw. list wbudowanych/systemowych.
+     * @param listId id niszczonej listy
+     * @throws IllegalArgumentException po stwierdzeniu że lista nie jest typem CUSTOM (niedozwolona operacja)
+     */
     public void deleteList(Long listId) {
         // Protect system lists from deletion
         String type = jdbcTemplate.query(
@@ -89,6 +133,12 @@ public class ListService {
         jdbcTemplate.update("DELETE FROM user_lists WHERE id = ?", listId);
     }
 
+    /**
+     * Wprowadza ewentualne korekty tytułów na listach. Zabezpiecza przed edycją list domyślnych (np. typu Watchlist/Favorites).
+     * @param listId modyfikowana lista
+     * @param newName nowy tytuł tekstowy
+     * @throws IllegalArgumentException na listach systemowych
+     */
     public void renameList(Long listId, String newName) {
         // Protect system lists from rename
         String type = jdbcTemplate.query(
@@ -104,6 +154,9 @@ public class ListService {
         );
     }
 
+    /**
+     * Formułuje zapytania do postaci zrozumiałego modelu transferowego dla struktury UserList.
+     */
     private UserListResponse mapUserList(ResultSet rs, int rowNum) throws SQLException {
         return new UserListResponse(
                 rs.getLong("id"),
@@ -113,6 +166,9 @@ public class ListService {
         );
     }
 
+    /**
+     * Formułuje odpowiedź bazodanową do postaci pełnych zestawień z ocenami na wybranej liście.
+     */
     private UserListItemResponse mapListItem(ResultSet rs, int rowNum) throws SQLException {
         return new UserListItemResponse(
                 rs.getLong("id"),

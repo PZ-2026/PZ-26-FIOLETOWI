@@ -1,0 +1,33 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Użytkownik" as User
+actor "Administrator" as Admin
+
+rectangle "MovieRate System" {
+  usecase "Przeglądanie filmów" as UC1
+  usecase "Wyszukiwanie filmów" as UC2
+  usecase "Ocenianie filmów" as UC3
+  usecase "Pisanie recenzji" as UC4
+  usecase "Zarządzanie listami" as UC5
+  usecase "Raporty PDF" as UC6
+  
+  usecase "Zarządzanie użytkownikami" as UC7
+  usecase "Blokowanie kont" as UC8
+  usecase "Zarządzanie bazą filmów" as UC9
+  usecase "Moderacja recenzji" as UC10
+}
+
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC5
+User --> UC6
+
+Admin --> UC7
+Admin --> UC8
+Admin --> UC9
+Admin --> UC10
+@enduml

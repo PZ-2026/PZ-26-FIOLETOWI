@@ -13,16 +13,29 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.stream.Collectors;
 
+/**
+ * Kontroler REST odpowiedzialny za uwierzytelnianie i autoryzację użytkowników.
+ * Obsługuje operacje logowania, rejestracji oraz aktualizacji profilu.
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
 
+    /**
+     * Konstruktor wstrzykujący serwis uwierzytelniający.
+     * @param authService serwis obsługujący procesy rejestracji i logowania
+     */
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
 
+    /**
+     * Uwierzytelnia użytkownika na podstawie adresu email i hasła.
+     * @param request obiekt zawierający dane logowania (email, hasło)
+     * @return odpowiedź zawierająca dane uwierzytelnionego użytkownika (AuthResponse) lub komunikat błędu
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
@@ -33,6 +46,11 @@ public class AuthController {
         }
     }
 
+    /**
+     * Rejestruje nowego użytkownika w systemie.
+     * @param request obiekt zawierający dane do rejestracji (nazwa użytkownika, email, hasło)
+     * @return odpowiedź zawierająca nowo utworzone dane użytkownika (AuthResponse) lub komunikat błędu
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
@@ -43,6 +61,12 @@ public class AuthController {
         }
     }
 
+    /**
+     * Aktualizuje profil istniejącego użytkownika.
+     * @param userId identyfikator aktualizowanego użytkownika przekazywany jako parametr zapytania
+     * @param request obiekt zawierający nowe dane profilowe
+     * @return zaktualizowane dane użytkownika (AuthResponse) lub komunikat błędu w przypadku braku walidacji
+     */
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestParam Long userId, @Valid @RequestBody UpdateProfileRequest request) {
         try {
@@ -62,6 +86,12 @@ public class AuthController {
         }
     }
 
+    /**
+     * Globalny handler błędów walidacji argumentów dla tego kontrolera.
+     * Zwraca czytelne komunikaty wygenerowane przez adnotacje @Valid.
+     * @param exception wyjątek z błędami walidacji
+     * @return odpowiedź z kodem 400 Bad Request oraz wiadomością ze wszystkimi błędami połączonymi w jeden ciąg tekstowy
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<String> handleValidationErrors(MethodArgumentNotValidException exception) {
         String message = exception.getBindingResult()
