@@ -1,6 +1,6 @@
 # MovieRate - PZ-26-FIOLETOWI
 
-Aplikacja typu "MovieRate" pozwalająca użytkownikom na przeglądanie filmów, ocenianie, pisanie recenzji oraz tworzenie własnych list. Projekt składa się z backendu stworzonego w technologii Spring Boot oraz aplikacji mobilnej na system Android.
+Aplikacja "MovieRate" pozwala użytkownikom na przeglądanie filmów, ocenianie, pisanie recenzji oraz tworzenie własnych list. Projekt składa się z backendu stworzonego w technologii Spring Boot oraz aplikacji mobilnej na system Android.
 
 ## Technologie
 * **Backend:** Java 21, Spring Boot (Web, Data JPA, Validation), PostgreSQL, JDBC
