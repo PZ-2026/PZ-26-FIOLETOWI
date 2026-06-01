@@ -23,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.movierate.data.remote.AuthResponse
+import com.example.movierate.data.remote.RetrofitClient
 import com.example.movierate.model.Movie
 import com.example.movierate.ui.components.DarkBackground
 import com.example.movierate.ui.components.MainTopAppBar
@@ -40,6 +41,8 @@ import com.example.movierate.ui.theme.MovieRateTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Initialize RetrofitClient with saved base URL (if any)
+        RetrofitClient.init(this)
         setContent {
             MovieRateTheme {
                 Surface(
@@ -260,7 +263,7 @@ fun AppNavigation() {
                 )
             }
             composable("admin") {
-                AdminScreen()
+                AdminScreen(navController = navController)
             }
         }
     }

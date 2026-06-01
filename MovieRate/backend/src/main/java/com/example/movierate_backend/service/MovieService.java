@@ -217,6 +217,7 @@ public class MovieService {
                     m.description,
                     m.release_year,
                     m.type,
+                    m.image_url,
                     COALESCE(ROUND(AVG(r.rating)::numeric, 1), 0) AS average_rating,
                     COALESCE(
                         (SELECT STRING_AGG(g.name, ',') FROM movie_genres mg2
@@ -226,7 +227,7 @@ public class MovieService {
                     ) AS genres
                 FROM movies m
                 LEFT JOIN ratings r ON r.movie_id = m.id
-                GROUP BY m.id, m.title, m.description, m.release_year, m.type
+                GROUP BY m.id, m.title, m.description, m.release_year, m.type, m.image_url
                 """;
     }
 
@@ -239,8 +240,11 @@ public class MovieService {
                 ? Arrays.stream(genresStr.split(",")).map(String::trim).collect(Collectors.toList())
                 : new ArrayList<>();
 
-        // Generate a deterministic image URL based on movie ID
-        String imageUrl = "https://picsum.photos/seed/movie" + rs.getLong("id") + "/300/450";
+        // Use image_url from DB if set, otherwise generate a deterministic one
+        String imageUrl = rs.getString("image_url");
+        if (imageUrl == null || imageUrl.isBlank()) {
+            imageUrl = "https://picsum.photos/seed/movie" + rs.getLong("id") + "/300/450";
+        }
 
         return new MovieResponse(
                 rs.getLong("id"),

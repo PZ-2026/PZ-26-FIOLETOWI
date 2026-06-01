@@ -1196,9 +1196,10 @@ public class DatabaseSeeder implements CommandLineRunner {
             (rs) -> rs.next() ? rs.getLong("id") : null,
             movie.title(), movie.releaseYear(), movie.type());
         if (userId != null && movieId != null) {
+            int intRating = (int) Math.round(rating);
             jdbcTemplate.update(
                 "INSERT INTO ratings (user_id, movie_id, rating) VALUES (?, ?, ?) ON CONFLICT DO NOTHING",
-                userId, movieId, rating);
+                userId, movieId, intRating);
         }
     }
 

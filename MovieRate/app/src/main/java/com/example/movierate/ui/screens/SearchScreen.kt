@@ -58,6 +58,7 @@ import com.example.movierate.model.Movie
 import com.example.movierate.model.toUiModel
 import com.example.movierate.ui.components.DarkBackground
 import com.example.movierate.ui.components.DarkSurface
+import com.example.movierate.ui.components.MovieCardWithImage
 import com.example.movierate.ui.components.TextBlue
 import kotlinx.coroutines.launch
 
