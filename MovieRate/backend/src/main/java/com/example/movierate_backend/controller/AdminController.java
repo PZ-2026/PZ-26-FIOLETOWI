@@ -47,6 +47,13 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    // --- Genres ---
+
+    @GetMapping("/genres")
+    public ResponseEntity<List<Map<String, Object>>> getAllGenres() {
+        return ResponseEntity.ok(adminService.getAllGenres());
+    }
+
     // --- Movies ---
 
     @PostMapping("/movies")

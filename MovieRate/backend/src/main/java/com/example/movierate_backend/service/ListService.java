@@ -38,14 +38,14 @@ public class ListService {
 
     public List<UserListItemResponse> getListItems(Long listId) {
         String sql = """
-                SELECT uli.id, m.id AS movie_id, m.title, m.release_year, m.type,
+                SELECT uli.id, m.id AS movie_id, m.title, m.release_year, m.type, m.image_url,
                        COALESCE(ROUND(AVG(r.rating)::numeric, 1), 0) AS average_rating,
                        uli.position
                 FROM user_list_items uli
                 JOIN movies m ON m.id = uli.movie_id
                 LEFT JOIN ratings r ON r.movie_id = m.id
                 WHERE uli.list_id = ?
-                GROUP BY uli.id, m.id, m.title, m.release_year, m.type, uli.position
+                GROUP BY uli.id, m.id, m.title, m.release_year, m.type, m.image_url, uli.position
                 ORDER BY uli.position ASC NULLS LAST, m.title ASC
                 """;
         return jdbcTemplate.query(sql, this::mapListItem, listId);
@@ -121,7 +121,8 @@ public class ListService {
                 rs.getInt("release_year"),
                 rs.getString("type"),
                 rs.getDouble("average_rating"),
-                rs.getObject("position", Integer.class)
+                rs.getObject("position", Integer.class),
+                rs.getString("image_url")
         );
     }
 }

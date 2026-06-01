@@ -4,9 +4,14 @@ import com.example.movierate_backend.dto.*;
 import com.example.movierate_backend.model.User;
 import com.example.movierate_backend.repository.UserRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AdminService {
@@ -53,20 +58,62 @@ public class AdminService {
         jdbcTemplate.update("DELETE FROM users WHERE id = ?", userId);
     }
 
+    // --- Genres ---
+
+    public List<Map<String, Object>> getAllGenres() {
+        return jdbcTemplate.query(
+                "SELECT id, name FROM genres ORDER BY name ASC",
+                (rs, rowNum) -> Map.of(
+                        "id", rs.getLong("id"),
+                        "name", rs.getString("name")
+                )
+        );
+    }
+
     // --- Movies ---
 
     public void createMovie(CreateMovieRequest request) {
-        jdbcTemplate.update(
-                "INSERT INTO movies (title, description, release_year, type) VALUES (?, ?, ?, ?)",
-                request.getTitle(), request.getDescription(), request.getReleaseYear(), request.getType()
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO movies (title, description, release_year, type, image_url) VALUES (?, ?, ?, ?, ?)",
+                    new String[]{"id"}
+            );
+            ps.setString(1, request.getTitle());
+            ps.setString(2, request.getDescription());
+            ps.setInt(3, request.getReleaseYear());
+            ps.setString(4, request.getType());
+            ps.setString(5, request.getImageUrl());
+            return ps;
+        }, keyHolder);
+
+        Number movieId = keyHolder.getKey();
+        if (movieId != null && request.getGenreIds() != null) {
+            for (Long genreId : request.getGenreIds()) {
+                jdbcTemplate.update(
+                        "INSERT INTO movie_genres (movie_id, genre_id) VALUES (?, ?) ON CONFLICT DO NOTHING",
+                        movieId.longValue(), genreId
+                );
+            }
+        }
     }
 
     public void updateMovie(Long movieId, CreateMovieRequest request) {
         jdbcTemplate.update(
-                "UPDATE movies SET title = ?, description = ?, release_year = ?, type = ? WHERE id = ?",
-                request.getTitle(), request.getDescription(), request.getReleaseYear(), request.getType(), movieId
+                "UPDATE movies SET title = ?, description = ?, release_year = ?, type = ?, image_url = ? WHERE id = ?",
+                request.getTitle(), request.getDescription(), request.getReleaseYear(), request.getType(), request.getImageUrl(), movieId
         );
+
+        // Update genres: delete existing, re-insert
+        if (request.getGenreIds() != null) {
+            jdbcTemplate.update("DELETE FROM movie_genres WHERE movie_id = ?", movieId);
+            for (Long genreId : request.getGenreIds()) {
+                jdbcTemplate.update(
+                        "INSERT INTO movie_genres (movie_id, genre_id) VALUES (?, ?) ON CONFLICT DO NOTHING",
+                        movieId, genreId
+                );
+            }
+        }
     }
 
     public void deleteMovie(Long movieId) {

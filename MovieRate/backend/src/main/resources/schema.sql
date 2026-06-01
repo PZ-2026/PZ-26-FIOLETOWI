@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS movies (
     description TEXT,
     release_year INT,
     type VARCHAR(20) CHECK (type IN ('MOVIE', 'SERIES')),
+    image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_movies_title_release_type UNIQUE (title, release_year, type)
 );
@@ -105,3 +106,6 @@ ALTER TABLE reports ADD CONSTRAINT fk_reports_user FOREIGN KEY (user_id) REFEREN
 ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_movie FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE;
 ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_person FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE;
 ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE;
+
+-- Add image_url column to movies if it doesn't exist (for existing databases)
+ALTER TABLE movies ADD COLUMN IF NOT EXISTS image_url TEXT;

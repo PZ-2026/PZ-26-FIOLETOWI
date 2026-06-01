@@ -56,12 +56,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.movierate.data.remote.AuthResponse
 import com.example.movierate.data.remote.CreateListRequest
 import com.example.movierate.data.remote.RetrofitClient
@@ -70,6 +68,7 @@ import com.example.movierate.data.remote.UserListResponse
 import com.example.movierate.model.Movie
 import com.example.movierate.ui.components.DarkBackground
 import com.example.movierate.ui.components.DarkSurface
+import com.example.movierate.ui.components.MovieCardWithImage
 import com.example.movierate.ui.components.TextBlue
 import kotlinx.coroutines.launch
 
@@ -430,7 +429,7 @@ fun ListsScreen(
                                     rating = item.averageRating,
                                     year = item.releaseYear ?: 0,
                                     type = if (item.type == "SERIES") "Serial" else "Film",
-                                    imageUrl = "https://picsum.photos/seed/movie${item.movieId}/300/450"
+                                    imageUrl = item.imageUrl ?: "https://picsum.photos/seed/movie${item.movieId}/300/450"
                                 ),
                                 onClick = {
                                     onNavigateToMovieDetail(
@@ -441,7 +440,7 @@ fun ListsScreen(
                                             rating = item.averageRating,
                                             year = item.releaseYear ?: 0,
                                             type = if (item.type == "SERIES") "Serial" else "Film",
-                                            imageUrl = "https://picsum.photos/seed/movie${item.movieId}/300/450"
+                                            imageUrl = item.imageUrl ?: "https://picsum.photos/seed/movie${item.movieId}/300/450"
                                         )
                                     )
                                 }

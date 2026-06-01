@@ -7,5 +7,6 @@ data class UserListItemResponse(
     val releaseYear: Int?,
     val type: String?,
     val averageRating: Double,
-    val position: Int?
+    val position: Int?,
+    val imageUrl: String? = null
 )

@@ -1,6 +1,9 @@
 package com.example.movierate.ui.screens
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,7 +12,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,38 +19,44 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.movierate.ui.components.DarkBackground
 import com.example.movierate.ui.components.DarkSurface
+import com.example.movierate.ui.components.MovieImage
 import com.example.movierate.ui.components.TextBlue
 import com.example.movierate.data.remote.AdminUserResponse
 import com.example.movierate.data.remote.CreateMovieRequest
+import com.example.movierate.data.remote.MovieDto
 import com.example.movierate.data.remote.ReportDownloadManager
 import com.example.movierate.data.remote.ReviewResponse
 import com.example.movierate.data.remote.RetrofitClient
 import kotlinx.coroutines.launch
 
 enum class AdminCategory(
-    val title: String, 
-    val color: Color, 
+    val title: String,
+    val color: Color,
     val icon: ImageVector,
     val subtitle: String
 ) {
     USERS("Użytkownicy", Color(0xFF3B82F6), Icons.Default.Person, "Zarządzaj kontami użytkowników"),
     MOVIES("Filmy", Color(0xFF10B981), Icons.Default.PlayArrow, "Dodawaj, edytuj i usuwaj filmy"),
     REVIEWS("Recenzje", Color(0xFF9333EA), Icons.Default.Email, "Moderuj recenzje użytkowników"),
-    SYSTEM("System", Color(0xFFF59E0B), Icons.Default.Settings, "Generuj raporty PDF")
+    SYSTEM("System", Color(0xFFF59E0B), Icons.Default.Settings, "Generuj raporty PDF"),
+    CONNECTION("Połączenie", Color(0xFF06B6D4), Icons.Default.Settings, "Zmień adres IP serwera")
 }
 
 @Composable
-fun AdminScreen(modifier: Modifier = Modifier) {
+fun AdminScreen(modifier: Modifier = Modifier, navController: androidx.navigation.NavController? = null) {
     var selectedCategory by remember { mutableStateOf(AdminCategory.MOVIES) }
 
     LazyColumn(
@@ -60,9 +68,21 @@ fun AdminScreen(modifier: Modifier = Modifier) {
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { navController?.popBackStack() }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Wstecz", tint = Color.White)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
                 Icon(Icons.Default.Lock, contentDescription = null, tint = TextBlue, modifier = Modifier.size(28.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Panel Administratora", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = {
+                    navController?.navigate("home") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }) {
+                    Icon(Icons.Default.Home, contentDescription = "Strona główna", tint = TextBlue)
+                }
             }
         }
 
@@ -116,6 +136,7 @@ fun AdminScreen(modifier: Modifier = Modifier) {
                         AdminCategory.USERS -> AdminUsersContent()
                         AdminCategory.REVIEWS -> AdminReviewsContent()
                         AdminCategory.SYSTEM -> AdminReportsContent()
+                        AdminCategory.CONNECTION -> AdminConnectionContent()
                     }
                 }
             }
@@ -162,6 +183,7 @@ fun AdminMoviesContent() {
     var title by remember { mutableStateOf("") }
     var releaseYear by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var imageUrl by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("Film") }
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -169,17 +191,138 @@ fun AdminMoviesContent() {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
+    // Image picker launcher (like profile picture)
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val bytes = inputStream?.readBytes() ?: return@rememberLauncherForActivityResult
+                inputStream.close()
+                val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+                imageUrl = "data:$mimeType;base64,$base64"
+            } catch (e: Exception) {
+                Toast.makeText(context, "Błąd wczytywania obrazka: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Genres state
+    var allGenres by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var selectedGenreIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var isLoadingGenres by remember { mutableStateOf(true) }
+
+    // Movie list state
+    var allMovies by remember { mutableStateOf<List<MovieDto>>(emptyList()) }
+    var isLoadingMovies by remember { mutableStateOf(true) }
+    var editingMovieId by remember { mutableStateOf<Long?>(null) }
+    var refreshKey by remember { mutableStateOf(0) }
+
+    // Year validation error
+    var yearError by remember { mutableStateOf<String?>(null) }
+
+    // Fetch genres from API
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.adminApi.getGenres()
+            if (response.isSuccessful) {
+                allGenres = response.body().orEmpty()
+            }
+        } catch (_: Exception) { }
+        isLoadingGenres = false
+    }
+
+    // Fetch all movies
+    LaunchedEffect(refreshKey) {
+        isLoadingMovies = true
+        try {
+            val response = RetrofitClient.moviesApi.getMovies()
+            if (response.isSuccessful) {
+                allMovies = response.body().orEmpty()
+            }
+        } catch (_: Exception) { }
+        isLoadingMovies = false
+    }
+
     Text("Zarządzanie filmami", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
     Spacer(modifier = Modifier.height(4.dp))
     Text("Dodaj, edytuj lub usuń filmy z bazy danych", color = Color.Gray, fontSize = 14.sp)
     
     Spacer(modifier = Modifier.height(24.dp))
     
+    // --- Form fields ---
     AdminTextField("Tytuł", "Wprowadź tytuł filmu", value = title, onValueChange = { title = it })
     Spacer(modifier = Modifier.height(16.dp))
-    AdminTextField("Rok produkcji", "2024", value = releaseYear, onValueChange = { releaseYear = it })
+    
+    // Year field with validation
+    Text("Rok produkcji", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedTextField(
+        value = releaseYear,
+        onValueChange = { newValue ->
+            // Only allow digits
+            if (newValue.all { it.isDigit() } || newValue.isEmpty()) {
+                releaseYear = newValue
+                yearError = null
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("2024", color = Color.Gray) },
+        isError = yearError != null,
+        supportingText = yearError?.let { { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp) } },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = DarkBackground,
+            unfocusedBorderColor = DarkBackground,
+            focusedContainerColor = DarkBackground,
+            unfocusedContainerColor = DarkBackground,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            cursorColor = Color.White
+        ),
+        shape = RoundedCornerShape(8.dp)
+    )
     Spacer(modifier = Modifier.height(16.dp))
+    
     AdminTextField("Opis", "Wprowadź opis filmu", minLines = 3, value = description, onValueChange = { description = it })
+    Spacer(modifier = Modifier.height(16.dp))
+    
+    // Image picker (like profile picture)
+    Text("Obrazek filmu", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(8.dp))
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Image preview - handles both base64 data URLs and HTTP URLs
+        MovieImage(
+            imageUrl = if (imageUrl.isNotBlank()) imageUrl else null,
+            contentDescription = "Obrazek filmu",
+            modifier = Modifier
+                .size(160.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFF2563EB), shape = RoundedCornerShape(12.dp)),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        // Pick image button
+        Button(
+            onClick = { imagePickerLauncher.launch("image/*") },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A3441), contentColor = Color.White),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Wybierz obrazek", fontWeight = FontWeight.Bold)
+        }
+        if (imageUrl.isNotBlank()) {
+            Spacer(modifier = Modifier.height(6.dp))
+            TextButton(onClick = { imageUrl = "" }) {
+                Text("Usuń obrazek", color = Color(0xFFEF4444), fontSize = 13.sp)
+            }
+        }
+    }
     Spacer(modifier = Modifier.height(16.dp))
     
     // Type Dropdown
@@ -227,22 +370,36 @@ fun AdminMoviesContent() {
     Spacer(modifier = Modifier.height(16.dp))
     Text("Gatunki", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(8.dp))
-    Row(
-        modifier = Modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        listOf("Dramat", "Kryminał", "Akcja", "Sci-Fi", "Thriller").forEach { genre ->
-            Surface(
-                color = DarkBackground,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(
-                    text = genre, 
-                    color = Color.LightGray, 
-                    fontSize = 12.sp, 
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                )
+    if (isLoadingGenres) {
+        CircularProgressIndicator(color = TextBlue, modifier = Modifier.size(24.dp))
+    } else {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            allGenres.forEach { genre ->
+                val genreId = (genre["id"] as? Number)?.toLong() ?: return@forEach
+                val genreName = (genre["name"] as? String) ?: return@forEach
+                val isSelected = genreId in selectedGenreIds
+                Surface(
+                    onClick = {
+                        selectedGenreIds = if (isSelected) {
+                            selectedGenreIds - genreId
+                        } else {
+                            selectedGenreIds + genreId
+                        }
+                    },
+                    color = if (isSelected) TextBlue else DarkBackground,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = genreName,
+                        color = if (isSelected) Color.White else Color.LightGray,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
             }
         }
     }
@@ -258,32 +415,61 @@ fun AdminMoviesContent() {
     
     Spacer(modifier = Modifier.height(32.dp))
     
+    // Save / Update button
     Button(
         onClick = {
-            if (title.isBlank() || releaseYear.isBlank()) {
-                errorMessage = "Tytuł i rok produkcji są wymagane"
+            // --- Validation ---
+            if (title.isBlank()) {
+                errorMessage = "Tytuł jest wymagany"
                 return@Button
             }
+            if (releaseYear.isBlank()) {
+                errorMessage = "Rok produkcji jest wymagany"
+                return@Button
+            }
+            val yearInt = releaseYear.trim().toIntOrNull()
+            if (yearInt == null || yearInt < 1888 || yearInt > 2035) {
+                yearError = "Podaj poprawny rok (1888-2035)"
+                errorMessage = "Nieprawidłowy rok produkcji"
+                return@Button
+            }
+            yearError = null
             errorMessage = null
             successMessage = null
             isSaving = true
             coroutineScope.launch {
                 try {
+                    val apiType = when (selectedType) {
+                        "Serial" -> "SERIES"
+                        else -> "MOVIE"
+                    }
                     val request = CreateMovieRequest(
                         title = title.trim(),
-                        description = description.trim(),
-                        releaseYear = releaseYear.trim().toIntOrNull() ?: 0,
-                        type = selectedType
+                        description = description.trim().ifEmpty { null },
+                        releaseYear = yearInt,
+                        type = apiType,
+                        genreIds = selectedGenreIds.toList(),
+                        imageUrl = imageUrl.trim().ifEmpty { null }
                     )
-                    val response = RetrofitClient.adminApi.createMovie(request)
+                    val response = if (editingMovieId != null) {
+                        RetrofitClient.adminApi.updateMovie(editingMovieId!!, request)
+                    } else {
+                        RetrofitClient.adminApi.createMovie(request)
+                    }
                     if (response.isSuccessful) {
-                        successMessage = "Film \"${title}\" został dodany!"
+                        val action = if (editingMovieId != null) "zaktualizowany" else "dodany"
+                        successMessage = "Film \"${title}\" został $action!"
                         title = ""
                         releaseYear = ""
                         description = ""
+                        imageUrl = ""
                         selectedType = "Film"
+                        selectedGenreIds = emptySet()
+                        editingMovieId = null
+                        refreshKey++ // Refresh movie list
                     } else {
-                        errorMessage = "Błąd: ${response.code()} ${response.message()}"
+                        val errorBody = response.errorBody()?.string() ?: response.message()
+                        errorMessage = "Błąd ${response.code()}: $errorBody"
                     }
                 } catch (e: Exception) {
                     errorMessage = "Błąd połączenia: ${e.message}"
@@ -293,17 +479,165 @@ fun AdminMoviesContent() {
             }
         },
         enabled = !isSaving,
-        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (editingMovieId != null) Color(0xFFF59E0B) else Color.White,
+            contentColor = if (editingMovieId != null) Color.White else Color.Black
+        ),
         shape = RoundedCornerShape(8.dp),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
     ) {
         if (isSaving) {
-            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.Black)
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = if (editingMovieId != null) Color.White else Color.Black)
         } else {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(
+                if (editingMovieId != null) Icons.Default.Edit else Icons.Default.Add,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
         }
         Spacer(modifier = Modifier.width(8.dp))
-        Text("Dodaj film", fontWeight = FontWeight.Bold)
+        Text(
+            if (editingMovieId != null) "Zapisz zmiany" else "Dodaj film",
+            fontWeight = FontWeight.Bold
+        )
+    }
+
+    if (editingMovieId != null) {
+        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(onClick = {
+            editingMovieId = null
+            title = ""
+            releaseYear = ""
+            description = ""
+            imageUrl = ""
+            selectedType = "Film"
+            selectedGenreIds = emptySet()
+            errorMessage = null
+            successMessage = null
+            yearError = null
+        }) {
+            Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("Anuluj edycję", color = Color.Gray, fontSize = 13.sp)
+        }
+    }
+
+    // --- Existing movies list ---
+    Spacer(modifier = Modifier.height(32.dp))
+    Divider(color = Color(0xFF2A3441))
+    Spacer(modifier = Modifier.height(16.dp))
+    Text("Istniejące filmy", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+    Spacer(modifier = Modifier.height(12.dp))
+
+    if (isLoadingMovies) {
+        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = TextBlue)
+        }
+    } else if (allMovies.isEmpty()) {
+        Text("Brak filmów w bazie danych", color = Color.Gray, fontSize = 14.sp)
+    } else {
+        allMovies.forEach { movie ->
+            Surface(
+                color = Color(0xFF1E2532),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Movie thumbnail
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF0D1017))
+                    ) {
+                        MovieImage(
+                            imageUrl = movie.imageUrl,
+                            contentDescription = movie.title,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(movie.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            "${movie.releaseYear ?: "?"} | ${movie.type}",
+                            color = Color.Gray,
+                            fontSize = 12.sp
+                        )
+                        if (!movie.genres.isNullOrEmpty()) {
+                            Text(
+                                movie.genres.joinToString(", "),
+                                color = TextBlue,
+                                fontSize = 11.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        IconButton(
+                            onClick = {
+                                // Load movie into form for editing
+                                editingMovieId = movie.id
+                                title = movie.title
+                                releaseYear = movie.releaseYear?.toString() ?: ""
+                                description = movie.description ?: ""
+                                imageUrl = movie.imageUrl ?: ""
+                                selectedType = when (movie.type) {
+                                    "SERIES" -> "Serial"
+                                    else -> "Film"
+                                }
+                                // Load genres for this movie
+                                coroutineScope.launch {
+                                    try {
+                                        val genresResp = RetrofitClient.adminApi.getGenres()
+                                        if (genresResp.isSuccessful) {
+                                            val allGenresList = genresResp.body().orEmpty()
+                                            // Match genre names to IDs
+                                            val matchedIds = allGenresList.filter { genre ->
+                                                val name = genre["name"] as? String
+                                                name != null && movie.genres?.contains(name) == true
+                                            }.mapNotNull { (it["id"] as? Number)?.toLong() }
+                                            selectedGenreIds = matchedIds.toSet()
+                                        }
+                                    } catch (_: Exception) { }
+                                }
+                                errorMessage = null
+                                successMessage = null
+                                yearError = null
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edytuj", tint = TextBlue, modifier = Modifier.size(18.dp))
+                        }
+                        IconButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    try {
+                                        val resp = RetrofitClient.adminApi.deleteMovie(movie.id)
+                                        if (resp.isSuccessful) {
+                                            successMessage = "Film \"${movie.title}\" został usunięty"
+                                            refreshKey++ // Refresh list
+                                        } else {
+                                            errorMessage = "Błąd usuwania: ${resp.code()}"
+                                        }
+                                    } catch (e: Exception) {
+                                        errorMessage = "Błąd: ${e.message}"
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = "Usuń", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -693,5 +1027,159 @@ fun AdminReportButton(
             Spacer(modifier = Modifier.height(2.dp))
             Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
+    }
+}
+
+@Composable
+fun AdminConnectionContent() {
+    var ipAddress by remember { mutableStateOf(RetrofitClient.getCurrentBaseUrl()) }
+    var isSaving by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    Text("Ustawienia połączenia", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    Spacer(modifier = Modifier.height(4.dp))
+    Text("Zmień adres IP serwera backend", color = Color.Gray, fontSize = 14.sp)
+
+    Spacer(modifier = Modifier.height(24.dp))
+
+    // Current connection info
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = DarkBackground),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Info, contentDescription = null, tint = TextBlue, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Aktualne połączenie", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = RetrofitClient.getCurrentBaseUrl(),
+                color = Color(0xFF10B981),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(24.dp))
+
+    // IP input
+    Text("Adres IP serwera", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedTextField(
+        value = ipAddress,
+        onValueChange = {
+            ipAddress = it
+            errorMessage = null
+            successMessage = null
+        },
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("http://192.168.1.100:8080", color = Color.Gray) },
+        singleLine = true,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = DarkBackground,
+            unfocusedBorderColor = DarkBackground,
+            focusedContainerColor = DarkBackground,
+            unfocusedContainerColor = DarkBackground,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White
+        ),
+        shape = RoundedCornerShape(8.dp)
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        "Format: http://ADRES:PORT (np. http://192.168.1.100:8080)",
+        color = Color.Gray,
+        fontSize = 12.sp
+    )
+
+    if (errorMessage != null) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+    }
+    if (successMessage != null) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(successMessage ?: "", color = Color(0xFF10B981), fontSize = 13.sp)
+    }
+
+    Spacer(modifier = Modifier.height(24.dp))
+
+    // Save button
+    Button(
+        onClick = {
+            val trimmed = ipAddress.trim()
+            if (trimmed.isBlank()) {
+                errorMessage = "Adres IP nie może być pusty"
+                return@Button
+            }
+            if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+                errorMessage = "Adres musi zaczynać się od http:// lub https://"
+                return@Button
+            }
+            errorMessage = null
+            successMessage = null
+            isSaving = true
+            coroutineScope.launch {
+                try {
+                    RetrofitClient.updateBaseUrl(trimmed)
+                    successMessage = "Adres IP został zmieniony na: $trimmed"
+                } catch (e: Exception) {
+                    errorMessage = "Błąd: ${e.message}"
+                } finally {
+                    isSaving = false
+                }
+            }
+        },
+        enabled = !isSaving,
+        modifier = Modifier.fillMaxWidth().height(50.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        if (isSaving) {
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.Black)
+        } else {
+            Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("Zapisz adres IP", fontWeight = FontWeight.Bold)
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    // Reset to default button
+    OutlinedButton(
+        onClick = {
+            ipAddress = RetrofitClient.getCurrentBaseUrl()
+            errorMessage = null
+            successMessage = null
+            isSaving = true
+            coroutineScope.launch {
+                try {
+                    RetrofitClient.resetToDefaultBaseUrl()
+                    ipAddress = RetrofitClient.getCurrentBaseUrl()
+                    successMessage = "Przywrócono domyślny adres IP"
+                } catch (e: Exception) {
+                    errorMessage = "Błąd: ${e.message}"
+                } finally {
+                    isSaving = false
+                }
+            }
+        },
+        enabled = !isSaving,
+        modifier = Modifier.fillMaxWidth().height(50.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+        border = BorderStroke(1.dp, Color.Gray),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("Przywróć domyślny adres", fontWeight = FontWeight.Bold)
     }
 }
