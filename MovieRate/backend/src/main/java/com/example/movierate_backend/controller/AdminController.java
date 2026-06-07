@@ -77,6 +77,10 @@ public class AdminController {
 
     // --- Genres ---
 
+    /**
+     * Pobiera listę wszystkich gatunków filmowych dostępnych w systemie.
+     * @return lista map zawierających id i nazwę gatunku
+     */
     @GetMapping("/genres")
     public ResponseEntity<List<Map<String, Object>>> getAllGenres() {
         return ResponseEntity.ok(adminService.getAllGenres());
