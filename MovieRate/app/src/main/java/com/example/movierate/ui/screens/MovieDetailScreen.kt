@@ -1,5 +1,7 @@
 package com.example.movierate.ui.screens
 
+import com.example.movierate.ui.components.MovieImage
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
@@ -31,7 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.movierate.data.remote.AddListItemRequest
 import com.example.movierate.data.remote.CastMemberDto
 import com.example.movierate.data.remote.CreateListRequest
@@ -69,6 +71,8 @@ fun MovieDetailScreen(
     var isAddingReview by remember { mutableStateOf(false) }
     var editingReviewId by remember { mutableStateOf<Long?>(null) }
     var editingReviewText by remember { mutableStateOf("") }
+    var isFavorite by remember { mutableStateOf(false) }
+    var isCheckingFavorite by remember { mutableStateOf(true) }
 
     // Fetch cast
     LaunchedEffect(movie.id) {
@@ -95,6 +99,29 @@ fun MovieDetailScreen(
             isLoadingRating = false
         } else {
             isLoadingRating = false
+        }
+    }
+
+    // Check if movie is in favorites
+    LaunchedEffect(movie.id, userId) {
+        if (userId != null && userId != 0L) {
+            isCheckingFavorite = true
+            try {
+                val listsResp = RetrofitClient.listsApi.getUserLists(userId)
+                if (listsResp.isSuccessful) {
+                    val lists = listsResp.body().orEmpty()
+                    val favorites = lists.find { it.type == "FAVORITES" }
+                    if (favorites != null) {
+                        val itemsResp = RetrofitClient.listsApi.getListItems(favorites.id)
+                        if (itemsResp.isSuccessful) {
+                            isFavorite = itemsResp.body().orEmpty().any { it.movieId == movie.id }
+                        }
+                    }
+                }
+            } catch (_: Exception) { }
+            isCheckingFavorite = false
+        } else {
+            isCheckingFavorite = false
         }
     }
 
@@ -222,28 +249,12 @@ fun MovieDetailScreen(
                     .fillMaxWidth()
                     .height(350.dp)
             ) {
-                if (movie.imageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = movie.imageUrl,
-                        contentDescription = movie.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF0D1017)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = movie.title.first().toString(),
-                            color = Color.DarkGray,
-                            fontSize = 48.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+                MovieImage(
+                    imageUrl = movie.imageUrl,
+                    contentDescription = movie.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
 
                 // Gradient overlay at bottom
                 Box(
@@ -597,17 +608,26 @@ fun MovieDetailScreen(
                                                 }
                                             }
                                             if (favorites != null) {
-                                                val itemsResp = RetrofitClient.listsApi.getListItems(favorites.id)
-                                                val alreadyInFav = itemsResp.isSuccessful &&
-                                                    itemsResp.body().orEmpty().any { it.movieId == movie.id }
-                                                if (alreadyInFav) {
-                                                    onShowMessage("Film jest już w ulubionych")
+                                                if (isFavorite) {
+                                                    // Remove from favorites
+                                                    val removeResp = RetrofitClient.listsApi.removeMovieFromList(
+                                                        favorites.id,
+                                                        movie.id
+                                                    )
+                                                    if (removeResp.isSuccessful) {
+                                                        isFavorite = false
+                                                        onShowMessage("Usunięto z ulubionych")
+                                                    } else {
+                                                        onShowMessage("Błąd usuwania z ulubionych")
+                                                    }
                                                 } else {
+                                                    // Add to favorites
                                                     val addResp = RetrofitClient.listsApi.addMovieToList(
                                                         favorites.id,
                                                         AddListItemRequest(movie.id, 0)
                                                     )
                                                     if (addResp.isSuccessful) {
+                                                        isFavorite = true
                                                         onShowMessage("Dodano do ulubionych")
                                                     } else {
                                                         onShowMessage("Błąd dodawania do ulubionych")
@@ -630,7 +650,12 @@ fun MovieDetailScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A3441)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.Default.FavoriteBorder, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+                        Icon(
+                            if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = null,
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 

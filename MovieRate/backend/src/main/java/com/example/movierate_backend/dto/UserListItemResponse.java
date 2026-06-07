@@ -8,9 +8,10 @@ public class UserListItemResponse {
     private final String type;
     private final Double averageRating;
     private final Integer position;
+    private final String imageUrl;
 
     public UserListItemResponse(Long id, Long movieId, String movieTitle, Integer releaseYear,
-                                String type, Double averageRating, Integer position) {
+                                String type, Double averageRating, Integer position, String imageUrl) {
         this.id = id;
         this.movieId = movieId;
         this.movieTitle = movieTitle;
@@ -18,6 +19,7 @@ public class UserListItemResponse {
         this.type = type;
         this.averageRating = averageRating;
         this.position = position;
+        this.imageUrl = imageUrl;
     }
 
     public Long getId() { return id; }
@@ -27,4 +29,5 @@ public class UserListItemResponse {
     public String getType() { return type; }
     public Double getAverageRating() { return averageRating; }
     public Integer getPosition() { return position; }
+    public String getImageUrl() { return imageUrl; }
 }

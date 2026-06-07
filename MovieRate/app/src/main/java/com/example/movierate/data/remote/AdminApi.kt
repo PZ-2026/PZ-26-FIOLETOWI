@@ -17,6 +17,10 @@ interface AdminApi {
     @DELETE("/api/admin/users/{id}")
     suspend fun deleteUser(@Path("id") userId: Long): Response<Unit>
 
+    // Genres
+    @GET("/api/admin/genres")
+    suspend fun getGenres(): Response<List<Map<String, Any>>>
+
     // Movies
     @POST("/api/admin/movies")
     suspend fun createMovie(@Body request: CreateMovieRequest): Response<Unit>

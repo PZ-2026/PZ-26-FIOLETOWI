@@ -1,5 +1,6 @@
 package com.example.movierate.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,14 +11,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.movierate.model.Movie
 
 val DarkBackground = Color(0xFF151A23)
 val DarkSurface = Color(0xFF1E2532)
@@ -58,7 +65,7 @@ fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, is
 }
 
 @Composable
-fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: NavController?, isLoggedIn: Boolean = false) {
+fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -202,6 +209,152 @@ fun MovieRateBottomNav(currentRoute: String = "home", navController: NavControll
                     unselectedIconColor = Color.Gray
                 )
             )
+        }
+    }
+}
+
+/**
+ * Composable that displays a movie image, handling both:
+ * - Base64 data URLs (e.g., "data:image/jpeg;base64,...") — decoded via BitmapFactory
+ * - Regular HTTP URLs — loaded via Coil's AsyncImage
+ * - Blank/empty URLs — shows a placeholder
+ */
+@Composable
+fun MovieImage(
+    imageUrl: String?,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop
+) {
+    if (imageUrl.isNullOrBlank()) {
+        // No image — show placeholder
+        Box(
+            modifier = modifier.background(Color(0xFF0D1017)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = null,
+                tint = Color.DarkGray,
+                modifier = Modifier.size(48.dp)
+            )
+        }
+    } else if (imageUrl.startsWith("data:")) {
+        // Base64 data URL — decode like profile picture
+        val imageBitmap = remember(imageUrl) {
+            try {
+                val base64Str = imageUrl.substringAfter("base64,")
+                val decodedBytes = android.util.Base64.decode(base64Str, android.util.Base64.DEFAULT)
+                val bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                if (bitmap != null) bitmap.asImageBitmap() else null
+            } catch (e: Exception) {
+                null
+            }
+        }
+        if (imageBitmap != null) {
+            Image(
+                bitmap = imageBitmap,
+                contentDescription = contentDescription,
+                modifier = modifier,
+                contentScale = contentScale
+            )
+        } else {
+            // Failed to decode — show placeholder
+            Box(
+                modifier = modifier.background(Color(0xFF0D1017)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = null,
+                    tint = Color.DarkGray,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+        }
+    } else {
+        // Regular HTTP URL — use Coil's AsyncImage
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = contentDescription,
+            modifier = modifier,
+            contentScale = contentScale
+        )
+    }
+}
+
+/**
+ * Shared movie card with image, title, rating, year, and genres.
+ * Used by HomeScreen, ListsScreen, SearchScreen, and FilteredMoviesScreen.
+ */
+@Composable
+fun MovieCardWithImage(movie: Movie, onClick: () -> Unit = {}) {
+    Card(
+        modifier = Modifier
+            .width(150.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = DarkSurface)
+    ) {
+        Column {
+            // Image
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .background(Color(0xFF0D1017))
+            ) {
+                MovieImage(
+                    imageUrl = movie.imageUrl,
+                    contentDescription = movie.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            // Info
+            Column(modifier = Modifier.padding(8.dp)) {
+                Text(
+                    text = movie.title,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFC107),
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = String.format("%.1f", movie.rating),
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = movie.year.toString(),
+                        color = Color.Gray,
+                        fontSize = 10.sp
+                    )
+                }
+                if (movie.genres.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = movie.genres.take(2).joinToString(", "),
+                        color = Color.Gray,
+                        fontSize = 9.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }

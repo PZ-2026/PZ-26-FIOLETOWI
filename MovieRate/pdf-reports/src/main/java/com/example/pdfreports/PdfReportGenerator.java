@@ -111,7 +111,7 @@ public class PdfReportGenerator {
         page.append(color).append(" rg BT ")
                 .append(font).append(" ").append(fontSize).append(" Tf ")
                 .append(x).append(" ").append(y)
-                .append(" Td (").append(escapePdfText(normalizeText(text))).append(") Tj ET\n");
+                .append(" Td (").append(escapePdfText(text)).append(") Tj ET\n");
     }
 
     private void appendRect(StringBuilder page, int x, int y, int width, int height, String color, boolean fill) {
@@ -122,10 +122,10 @@ public class PdfReportGenerator {
 
     private byte[] buildPdf(List<String> pageContents) {
         List<byte[]> objects = new ArrayList<>();
-        objects.add("<< /Type /Catalog /Pages 2 0 R >>".getBytes(StandardCharsets.ISO_8859_1));
-        objects.add(buildPagesObject(pageContents.size()).getBytes(StandardCharsets.ISO_8859_1));
-        objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>".getBytes(StandardCharsets.ISO_8859_1));
-        objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".getBytes(StandardCharsets.ISO_8859_1));
+        objects.add("<< /Type /Catalog /Pages 2 0 R >>".getBytes(StandardCharsets.UTF_8));
+        objects.add(buildPagesObject(pageContents.size()).getBytes(StandardCharsets.UTF_8));
+        objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>".getBytes(StandardCharsets.UTF_8));
+        objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".getBytes(StandardCharsets.UTF_8));
 
         int firstPageObject = 5;
         int firstContentObject = firstPageObject + pageContents.size();
@@ -134,13 +134,13 @@ public class PdfReportGenerator {
             int contentObjectNumber = firstContentObject + i;
             objects.add(("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + PAGE_WIDTH + " " + PAGE_HEIGHT
                     + "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "
-                    + contentObjectNumber + " 0 R >>").getBytes(StandardCharsets.ISO_8859_1));
+                    + contentObjectNumber + " 0 R >>").getBytes(StandardCharsets.UTF_8));
         }
 
         for (String pageContent : pageContents) {
-            byte[] stream = pageContent.getBytes(StandardCharsets.ISO_8859_1);
+            byte[] stream = pageContent.getBytes(StandardCharsets.UTF_8);
             objects.add(("<< /Length " + stream.length + " >>\nstream\n"
-                    + pageContent + "endstream").getBytes(StandardCharsets.ISO_8859_1));
+                    + pageContent + "endstream").getBytes(StandardCharsets.UTF_8));
         }
 
         return writePdf(objects);
@@ -179,7 +179,7 @@ public class PdfReportGenerator {
     }
 
     private void write(ByteArrayOutputStream output, String text) {
-        output.writeBytes(text.getBytes(StandardCharsets.ISO_8859_1));
+        output.writeBytes(text.getBytes(StandardCharsets.UTF_8));
     }
 
     private String blankToDefault(String value, String defaultValue) {
@@ -208,7 +208,7 @@ public class PdfReportGenerator {
     }
 
     private String normalizeText(String text) {
-        return text == null ? "" : text.replaceAll("[^\\x20-\\x7E]", "?");
+        return text == null ? "" : text;
     }
 
     private String escapePdfText(String text) {

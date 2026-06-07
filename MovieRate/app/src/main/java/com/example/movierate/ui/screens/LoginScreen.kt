@@ -1,22 +1,31 @@
 package com.example.movierate.ui.screens
 
 import android.util.Patterns
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -188,6 +197,101 @@ fun LoginScreen(
                     fontSize = 14.sp,
                     modifier = Modifier.clickable { onRegisterClick() }
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Server IP configuration (collapsible)
+                var showServerConfig by remember { mutableStateOf(false) }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showServerConfig = !showServerConfig },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Konfiguracja serwera",
+                        color = Color.Gray,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        if (showServerConfig) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                AnimatedVisibility(visible = showServerConfig) {
+                    Column(modifier = Modifier.padding(top = 12.dp)) {
+                        var serverUrl by remember { mutableStateOf(RetrofitClient.getCurrentBaseUrl()) }
+                        var configError by remember { mutableStateOf<String?>(null) }
+                        var configSuccess by remember { mutableStateOf<String?>(null) }
+
+                        Text(
+                            text = "Adres serwera",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = serverUrl,
+                            onValueChange = {
+                                serverUrl = it
+                                configError = null
+                                configSuccess = null
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("http://192.168.1.41:8080", color = Color.Gray, fontSize = 13.sp) },
+                            singleLine = true,
+                            colors = authFieldColors(),
+                            shape = RoundedCornerShape(8.dp),
+                            textStyle = TextStyle(fontSize = 13.sp)
+                        )
+
+                        if (configError != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(configError ?: "", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                        }
+                        if (configSuccess != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(configSuccess ?: "", color = Color(0xFF10B981), fontSize = 12.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = {
+                                val trimmed = serverUrl.trim()
+                                if (trimmed.isBlank()) {
+                                    configError = "Adres nie może być pusty"
+                                    return@OutlinedButton
+                                }
+                                if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+                                    configError = "Adres musi zaczynać się od http:// lub https://"
+                                    return@OutlinedButton
+                                }
+                                RetrofitClient.updateBaseUrl(trimmed)
+                                configSuccess = "Zapisano: $trimmed"
+                                configError = null
+                            },
+                            modifier = Modifier.fillMaxWidth().height(40.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Zapisz adres serwera", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                    }
+                }
             }
         }
     }
