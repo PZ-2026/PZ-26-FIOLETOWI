@@ -87,6 +87,10 @@ public class AdminService {
 
     // --- Genres ---
 
+    /**
+     * Pobiera pełną listę gatunków filmowych z bazy danych, posortowaną alfabetycznie.
+     * @return lista map z kluczami "id" i "name" reprezentujących gatunki
+     */
     public List<Map<String, Object>> getAllGenres() {
         return jdbcTemplate.query(
                 "SELECT id, name FROM genres ORDER BY name ASC",
