@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import com.example.movierate.ui.screens.ProfileScreen
 import com.example.movierate.ui.screens.RegisterScreen
 import com.example.movierate.ui.screens.SearchScreen
 import com.example.movierate.ui.theme.MovieRateTheme
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +67,7 @@ fun saveUserSession(context: Context, user: AuthResponse) {
         putString("role", user.role)
         putString("createdAt", user.createdAt)
         putString("profilePictureUrl", user.profilePictureUrl)
+        putBoolean("blocked", user.blocked)
         apply()
     }
 }
@@ -80,7 +83,8 @@ fun restoreUserSession(context: Context): AuthResponse? {
         email = prefs.getString("email", null) ?: return null,
         role = prefs.getString("role", null) ?: "",
         createdAt = prefs.getString("createdAt", null),
-        profilePictureUrl = prefs.getString("profilePictureUrl", null)
+        profilePictureUrl = prefs.getString("profilePictureUrl", null),
+        blocked = prefs.getBoolean("blocked", false)
     )
 }
 
@@ -94,12 +98,43 @@ fun AppNavigation() {
     val context = LocalContext.current
     val navController = rememberNavController()
     var currentUser by remember { mutableStateOf(restoreUserSession(context)) }
+    var isGuest by remember { mutableStateOf(false) }
     var selectedMovie by remember { mutableStateOf<Movie?>(null) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "login"
 
     val isFullScreen = currentRoute == "login" || currentRoute == "register" || currentRoute == "movie_detail"
-    val startDest = if (currentUser != null) "home" else "login"
+    val startDest = if (currentUser != null || isGuest) "home" else "login"
+
+    LaunchedEffect(currentUser?.userId, isGuest) {
+        if (currentUser == null || isGuest) return@LaunchedEffect
+
+        while (currentUser != null && !isGuest) {
+            val userId = currentUser?.userId
+            if (userId != null) {
+                try {
+                    val response = RetrofitClient.api.status(userId)
+                    if (response.code() == 403 || response.code() == 404) {
+                        currentUser = null
+                        isGuest = false
+                        clearUserSession(context)
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                        break
+                    } else if (response.isSuccessful) {
+                        response.body()?.let { activeUser ->
+                            currentUser = activeUser
+                            saveUserSession(context, activeUser)
+                        }
+                    }
+                } catch (_: Exception) {
+                    // Brak sieci nie wylogowuje użytkownika, żeby nie karać za chwilowy problem z backendem.
+                }
+            }
+            delay(5000)
+        }
+    }
 
     Scaffold(
         containerColor = DarkBackground,
@@ -108,13 +143,15 @@ fun AppNavigation() {
                 MainTopAppBar(
                     onLogout = {
                         currentUser = null
+                        isGuest = false
                         clearUserSession(context)
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
                         }
                     },
                     navController = navController,
-                    isLoggedIn = currentUser != null
+                    isLoggedIn = currentUser != null,
+                    isGuest = isGuest
                 )
             }
         },
@@ -122,7 +159,8 @@ fun AppNavigation() {
             if (!isFullScreen) {
                 MovieRateBottomNav(
                     currentRoute = currentRoute,
-                    navController = navController
+                    navController = navController,
+                    isGuest = isGuest
                 )
             }
         }
@@ -139,7 +177,16 @@ fun AppNavigation() {
                     },
                     onLoginSuccess = { user ->
                         currentUser = user
+                        isGuest = false
                         saveUserSession(context, user)
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onContinueAsGuest = {
+                        currentUser = null
+                        isGuest = true
+                        clearUserSession(context)
                         navController.navigate("home") {
                             popUpTo("login") { inclusive = true }
                         }
@@ -155,6 +202,7 @@ fun AppNavigation() {
                     },
                     onRegisterSuccess = { user ->
                         currentUser = user
+                        isGuest = false
                         saveUserSession(context, user)
                         navController.navigate("home") {
                             popUpTo("login") { inclusive = true }
@@ -221,13 +269,19 @@ fun AppNavigation() {
                 )
             }
             composable("lists") {
-                ListsScreen(
-                    user = currentUser,
-                    onNavigateToMovieDetail = { movie ->
-                        selectedMovie = movie
-                        navController.navigate("movie_detail")
+                if (currentUser == null || isGuest) {
+                    navController.navigate(if (isGuest) "home" else "login") {
+                        popUpTo("lists") { inclusive = true }
                     }
-                )
+                } else {
+                    ListsScreen(
+                        user = currentUser,
+                        onNavigateToMovieDetail = { movie ->
+                            selectedMovie = movie
+                            navController.navigate("movie_detail")
+                        }
+                    )
+                }
             }
             composable("movie_detail") {
                 val movie = selectedMovie
@@ -245,25 +299,38 @@ fun AppNavigation() {
                 }
             }
             composable("profile") {
-                ProfileScreen(
-                    user = currentUser,
-                    onLogout = {
-                        currentUser = null
-                        clearUserSession(context)
-                        navController.navigate("login") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
-                    onUserUpdated = { updatedUser ->
-                        if (updatedUser != null) {
-                            currentUser = updatedUser
-                            saveUserSession(context, updatedUser)
-                        }
+                if (currentUser == null || isGuest) {
+                    navController.navigate(if (isGuest) "home" else "login") {
+                        popUpTo("profile") { inclusive = true }
                     }
-                )
+                } else {
+                    ProfileScreen(
+                        user = currentUser,
+                        onLogout = {
+                            currentUser = null
+                            isGuest = false
+                            clearUserSession(context)
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        },
+                        onUserUpdated = { updatedUser ->
+                            if (updatedUser != null) {
+                                currentUser = updatedUser
+                                saveUserSession(context, updatedUser)
+                            }
+                        }
+                    )
+                }
             }
             composable("admin") {
-                AdminScreen(navController = navController)
+                if (currentUser?.role == "ADMIN" && !isGuest) {
+                    AdminScreen(navController = navController)
+                } else {
+                    navController.navigate(if (isGuest) "home" else "login") {
+                        popUpTo("admin") { inclusive = true }
+                    }
+                }
             }
         }
     }

@@ -6,5 +6,6 @@ data class CreateMovieRequest(
     val releaseYear: Int,
     val type: String,
     val genreIds: List<Long>? = null,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val actorNames: List<String>? = null
 )

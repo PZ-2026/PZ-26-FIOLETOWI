@@ -7,9 +7,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
@@ -107,6 +107,7 @@ public class AdminService {
      * Obsługuje proces stworzenia nowego wpisu filmu na podstawie przesłanego żądania i wstawia go do bazy.
      * @param request parametry nowego filmu (tytuł, opis, rok wydania, typ)
      */
+    @Transactional
     public void createMovie(CreateMovieRequest request) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -131,6 +132,9 @@ public class AdminService {
                 );
             }
         }
+        if (movieId != null) {
+            updateMovieActors(movieId.longValue(), request.getActorNames());
+        }
     }
 
     /**
@@ -138,6 +142,7 @@ public class AdminService {
      * @param movieId identyfikator zmienianego filmu
      * @param request zaktualizowany zbiór informacji
      */
+    @Transactional
     public void updateMovie(Long movieId, CreateMovieRequest request) {
         jdbcTemplate.update(
                 "UPDATE movies SET title = ?, description = ?, release_year = ?, type = ?, image_url = ? WHERE id = ?",
@@ -154,6 +159,77 @@ public class AdminService {
                 );
             }
         }
+        if (request.getActorNames() != null) {
+            updateMovieActors(movieId, request.getActorNames());
+        }
+    }
+
+    private void updateMovieActors(Long movieId, List<String> actorNames) {
+        if (actorNames == null) {
+            return;
+        }
+
+        Long actorRoleId = ensureRole("ACTOR");
+        jdbcTemplate.update(
+                "DELETE FROM movie_cast WHERE movie_id = ? AND role_id = ?",
+                movieId, actorRoleId
+        );
+
+        actorNames.stream()
+                .filter(name -> name != null && !name.isBlank())
+                .map(String::trim)
+                .distinct()
+                .forEach(actorName -> {
+                    Long personId = ensurePerson(actorName);
+                    jdbcTemplate.update(
+                            "INSERT INTO movie_cast (movie_id, person_id, role_id) VALUES (?, ?, ?) ON CONFLICT DO NOTHING",
+                            movieId, personId, actorRoleId
+                    );
+                });
+    }
+
+    private Long ensureRole(String roleName) {
+        Long existingId = jdbcTemplate.query(
+                "SELECT id FROM roles WHERE name = ?",
+                rs -> rs.next() ? rs.getLong("id") : null,
+                roleName
+        );
+        if (existingId != null) {
+            return existingId;
+        }
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO roles (name) VALUES (?)",
+                    new String[]{"id"}
+            );
+            ps.setString(1, roleName);
+            return ps;
+        }, keyHolder);
+        return keyHolder.getKey().longValue();
+    }
+
+    private Long ensurePerson(String personName) {
+        Long existingId = jdbcTemplate.query(
+                "SELECT id FROM people WHERE LOWER(name) = LOWER(?)",
+                rs -> rs.next() ? rs.getLong("id") : null,
+                personName
+        );
+        if (existingId != null) {
+            return existingId;
+        }
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO people (name) VALUES (?)",
+                    new String[]{"id"}
+            );
+            ps.setString(1, personName);
+            return ps;
+        }, keyHolder);
+        return keyHolder.getKey().longValue();
     }
 
     /**
@@ -180,6 +256,7 @@ public class AdminService {
                 FROM reviews rv
                 JOIN users u ON u.id = rv.user_id
                 JOIN movies m ON m.id = rv.movie_id
+                WHERE rv.is_deleted = FALSE AND rv.is_approved = FALSE
                 ORDER BY rv.created_at DESC
                 """;
         return jdbcTemplate.query(sql, (rs, rowNum) ->
@@ -201,7 +278,7 @@ public class AdminService {
      * @param reviewId id wybranej recenzji
      */
     public void approveReview(Long reviewId) {
-        jdbcTemplate.update("UPDATE reviews SET is_deleted = FALSE WHERE id = ?", reviewId);
+        jdbcTemplate.update("UPDATE reviews SET is_approved = TRUE, is_deleted = FALSE WHERE id = ?", reviewId);
     }
 
     /**

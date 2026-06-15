@@ -7,6 +7,7 @@ import com.example.movierate_backend.dto.UpdateProfileRequest;
 import com.example.movierate_backend.model.User;
 import com.example.movierate_backend.service.AuthService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +42,8 @@ public class AuthController {
         try {
             AuthResponse response = authService.login(request);
             return ResponseEntity.ok(response);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -61,6 +64,17 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/status")
+    public ResponseEntity<?> status(@RequestParam Long userId) {
+        try {
+            return ResponseEntity.ok(authService.getActiveUserStatus(userId));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
     /**
      * Aktualizuje profil istniejącego użytkownika.
      * @param userId identyfikator aktualizowanego użytkownika przekazywany jako parametr zapytania
@@ -71,15 +85,7 @@ public class AuthController {
     public ResponseEntity<?> updateProfile(@RequestParam Long userId, @Valid @RequestBody UpdateProfileRequest request) {
         try {
             User updated = authService.updateProfile(userId, request);
-            AuthResponse response = new AuthResponse(
-                    updated.getId(),
-                    "Profil zaktualizowany",
-                    updated.getUsername(),
-                    updated.getEmail(),
-                    updated.getRole(),
-                    updated.getCreatedAt() != null ? updated.getCreatedAt().toString() : null,
-                    updated.getProfilePictureUrl()
-            );
+            AuthResponse response = authService.toAuthResponse(updated, "Profil zaktualizowany");
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

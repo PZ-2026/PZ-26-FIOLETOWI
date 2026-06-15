@@ -24,6 +24,8 @@ public class CreateMovieRequest {
 
     private String imageUrl;
 
+    private List<String> actorNames;
+
     /**
      * Zwraca tytuł produkcji.
      * @return tytuł
@@ -95,4 +97,16 @@ public class CreateMovieRequest {
      * @param imageUrl nowy adres
      */
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    /**
+     * Zwraca listę aktorów powiązanych z filmem.
+     * @return lista nazw aktorów
+     */
+    public List<String> getActorNames() { return actorNames; }
+
+    /**
+     * Ustawia listę aktorów powiązanych z filmem.
+     * @param actorNames lista nazw aktorów
+     */
+    public void setActorNames(List<String> actorNames) { this.actorNames = actorNames; }
 }

@@ -10,97 +10,149 @@ import java.util.Locale;
 public class PdfReportGenerator {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    private static final int PAGE_WIDTH = 595;
-    private static final int PAGE_HEIGHT = 842;
-    private static final int LEFT_MARGIN = 48;
-    private static final int TOP_MARGIN = 790;
-    private static final int BOTTOM_MARGIN = 54;
-    private static final int LINE_HEIGHT = 22;
-    private static final int TABLE_TOP_MARGIN = 650;
-    private static final int TABLE_ROW_HEIGHT = 24;
-    private static final int TITLE_X = 64;
-    private static final int TABLE_X = 48;
-    private static final int TABLE_WIDTH = 499;
+    private static final int PAGE_WIDTH = 842;
+    private static final int PAGE_HEIGHT = 595;
+    private static final int LEFT_MARGIN = 40;
+    private static final int RIGHT_MARGIN = 40;
+    private static final int TOP_Y = 555;
+    private static final int BOTTOM_MARGIN = 38;
+    private static final int CONTENT_TOP_Y = 418;
+    private static final int CONTENT_WIDTH = PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN;
+
+    private record RenderedMovie(MovieReportItem movie, List<String> titleLines, List<String> reviewLines, int height) {}
+    private record ReportPage(List<RenderedMovie> rows) {}
 
     public byte[] generateMovieReport(MovieReportParams params) {
-        List<String> pages = createReportPages(params);
-        return buildPdf(pages);
+        List<ReportPage> pages = paginate(params);
+        List<String> renderedPages = new ArrayList<>();
+        for (int i = 0; i < pages.size(); i++) {
+            renderedPages.add(renderPage(params, pages.get(i), i + 1, pages.size()));
+        }
+        return buildPdf(renderedPages);
     }
 
-    private List<String> createReportPages(MovieReportParams params) {
+    private List<ReportPage> paginate(MovieReportParams params) {
         List<MovieReportItem> movies = params.movies() == null ? List.of() : params.movies();
-        String title = blankToDefault(params.title(), "MovieRate report");
-        String generatedBy = blankToDefault(params.generatedBy(), "MovieRate");
-        String generatedAt = params.generatedAt() == null ? "" : params.generatedAt().format(DATE_FORMATTER);
+        List<ReportPage> pages = new ArrayList<>();
+        List<RenderedMovie> currentRows = new ArrayList<>();
+        int availableHeight = CONTENT_TOP_Y - BOTTOM_MARGIN;
+        int usedHeight = 0;
 
-        List<String> pages = new ArrayList<>();
-        int rowsPerPage = (TABLE_TOP_MARGIN - BOTTOM_MARGIN) / TABLE_ROW_HEIGHT;
-        int pageCount = Math.max(1, (int) Math.ceil(movies.size() / (double) rowsPerPage));
-
-        for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
-            StringBuilder page = new StringBuilder();
-            renderHeader(page, title, generatedBy, generatedAt, movies, pageIndex + 1, pageCount);
-            renderTableHeader(page);
-
-            int first = pageIndex * rowsPerPage;
-            int last = Math.min(first + rowsPerPage, movies.size());
-            if (movies.isEmpty()) {
-                appendText(page, "No movies were provided for this report.", TABLE_X + 16, TABLE_TOP_MARGIN - 42, 12, "/F2");
-            } else {
-                for (int i = first; i < last; i++) {
-                    renderMovieRow(page, movies.get(i), i + 1, TABLE_TOP_MARGIN - 34 - ((i - first) * TABLE_ROW_HEIGHT));
-                }
-            }
-            pages.add(page.toString());
+        if (movies.isEmpty()) {
+            pages.add(new ReportPage(List.of()));
+            return pages;
         }
 
+        for (MovieReportItem movie : movies) {
+            RenderedMovie rendered = renderable(movie);
+            if (!currentRows.isEmpty() && usedHeight + rendered.height() > availableHeight) {
+                pages.add(new ReportPage(currentRows));
+                currentRows = new ArrayList<>();
+                usedHeight = 0;
+            }
+            currentRows.add(rendered);
+            usedHeight += rendered.height();
+        }
+
+        if (!currentRows.isEmpty()) {
+            pages.add(new ReportPage(currentRows));
+        }
         return pages;
+    }
+
+    private RenderedMovie renderable(MovieReportItem movie) {
+        List<String> titleLines = wrapText(blankToDefault(movie.title(), "Untitled"), 58);
+        List<String> reviewLines = wrapText(blankToDefault(movie.reviewContent(), "Brak recenzji"), 98);
+        int textHeight = 18 + titleLines.size() * 13 + reviewLines.size() * 11;
+        int height = Math.max(62, textHeight + 18);
+        return new RenderedMovie(movie, titleLines, reviewLines, height);
+    }
+
+    private String renderPage(MovieReportParams params, ReportPage reportPage, int pageNumber, int pageCount) {
+        List<MovieReportItem> allMovies = params.movies() == null ? List.of() : params.movies();
+        String title = blankToDefault(params.title(), "MovieRate report");
+        String generatedBy = blankToDefault(params.generatedBy(), "MovieRate");
+        String generatedAt = params.generatedAt() == null ? "-" : params.generatedAt().format(DATE_FORMATTER);
+
+        StringBuilder page = new StringBuilder();
+        renderHeader(page, title, generatedBy, generatedAt, allMovies, pageNumber, pageCount);
+
+        if (allMovies.isEmpty()) {
+            appendRect(page, LEFT_MARGIN, 330, CONTENT_WIDTH, 56, "0.97 0.98 0.99", true);
+            appendRect(page, LEFT_MARGIN, 330, CONTENT_WIDTH, 56, "0.82 0.86 0.92", false);
+            appendText(page, "Brak danych do wygenerowania raportu.", LEFT_MARGIN + 18, 355, 13, "/F1", "0.16 0.20 0.27");
+            return page.toString();
+        }
+
+        int y = CONTENT_TOP_Y;
+        int startIndex = pageNumber == 1 ? 1 : countRowsBefore(params, pageNumber);
+        for (int i = 0; i < reportPage.rows().size(); i++) {
+            RenderedMovie row = reportPage.rows().get(i);
+            renderMovieCard(page, row, startIndex + i, y);
+            y -= row.height();
+        }
+        return page.toString();
+    }
+
+    private int countRowsBefore(MovieReportParams params, int pageNumber) {
+        List<ReportPage> pages = paginate(params);
+        int count = 1;
+        for (int i = 0; i < pageNumber - 1 && i < pages.size(); i++) {
+            count += pages.get(i).rows().size();
+        }
+        return count;
     }
 
     private void renderHeader(StringBuilder page, String title, String generatedBy, String generatedAt,
                               List<MovieReportItem> movies, int pageNumber, int pageCount) {
-        appendRect(page, 0, 760, PAGE_WIDTH, 82, "0.08 0.12 0.18", true);
-        appendRect(page, 48, 730, TABLE_WIDTH, 1, "0.82 0.86 0.92", true);
-        appendText(page, "MovieRate", TITLE_X, 812, 12, "/F2", "0.82 0.86 0.92");
-        appendText(page, title, TITLE_X, 786, 22, "/F1", "1 1 1");
-        appendText(page, "Generated by: " + generatedBy, TITLE_X, 746, 10, "/F2", "0.25 0.29 0.35");
-        appendText(page, "Generated at: " + blankToDefault(generatedAt, "-"), 330, 746, 10, "/F2", "0.25 0.29 0.35");
+        appendRect(page, 0, 500, PAGE_WIDTH, 95, "0.08 0.12 0.18", true);
+        appendText(page, "MovieRate", LEFT_MARGIN, TOP_Y, 12, "/F2", "0.82 0.86 0.92");
+        appendText(page, safeLine(title, 74), LEFT_MARGIN, 527, 23, "/F1", "1 1 1");
+        appendText(page, "Wygenerowano przez: " + safeLine(generatedBy, 42), LEFT_MARGIN, 486, 10, "/F2", "0.36 0.42 0.50");
+        appendText(page, "Data: " + generatedAt, 375, 486, 10, "/F2", "0.36 0.42 0.50");
+        appendText(page, "Strona " + pageNumber + " / " + pageCount, 705, 486, 10, "/F2", "0.36 0.42 0.50");
 
-        appendSummaryCard(page, "Movies", String.valueOf(movies.size()), 48, 680);
-        appendSummaryCard(page, "Avg rating", averageRating(movies), 216, 680);
-        appendSummaryCard(page, "Page", pageNumber + " / " + pageCount, 384, 680);
+        appendSummaryCard(page, "Pozycji", String.valueOf(movies.size()), LEFT_MARGIN, 438);
+        appendSummaryCard(page, "Srednia ocena", averageRating(movies), 215, 438);
+        appendSummaryCard(page, "Z ocenami usera", String.valueOf(countUserRatings(movies)), 390, 438);
+        appendSummaryCard(page, "Z recenzjami", String.valueOf(countReviews(movies)), 565, 438);
     }
 
     private void appendSummaryCard(StringBuilder page, String label, String value, int x, int y) {
-        appendRect(page, x, y, 140, 54, "0.94 0.96 0.98", true);
-        appendRect(page, x, y, 140, 54, "0.78 0.83 0.90", false);
-        appendText(page, label, x + 14, y + 33, 9, "/F2", "0.36 0.40 0.46");
-        appendText(page, value, x + 14, y + 13, 18, "/F1", "0.08 0.12 0.18");
+        appendRect(page, x, y, 150, 42, "0.95 0.97 0.99", true);
+        appendRect(page, x, y, 150, 42, "0.78 0.83 0.90", false);
+        appendText(page, label, x + 12, y + 25, 8, "/F2", "0.38 0.43 0.50");
+        appendText(page, value, x + 12, y + 9, 15, "/F1", "0.08 0.12 0.18");
     }
 
-    private void renderTableHeader(StringBuilder page) {
-        appendRect(page, TABLE_X, TABLE_TOP_MARGIN - 8, TABLE_WIDTH, 28, "0.12 0.16 0.22", true);
-        appendText(page, "#", TABLE_X + 12, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-        appendText(page, "Title", TABLE_X + 42, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-        appendText(page, "Year", TABLE_X + 270, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-        appendText(page, "Type", TABLE_X + 320, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-        appendText(page, "Avg", TABLE_X + 380, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-        appendText(page, "User", TABLE_X + 430, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-        appendText(page, "Review", TABLE_X + 480, TABLE_TOP_MARGIN, 10, "/F1", "1 1 1");
-    }
+    private void renderMovieCard(StringBuilder page, RenderedMovie row, int index, int topY) {
+        MovieReportItem movie = row.movie();
+        int cardY = topY - row.height() + 8;
+        appendRect(page, LEFT_MARGIN, cardY, CONTENT_WIDTH, row.height() - 10, index % 2 == 0 ? "0.98 0.99 1" : "1 1 1", true);
+        appendRect(page, LEFT_MARGIN, cardY, CONTENT_WIDTH, row.height() - 10, "0.86 0.90 0.95", false);
+        appendRect(page, LEFT_MARGIN, cardY, 5, row.height() - 10, "0.23 0.51 0.96", true);
 
-    private void renderMovieRow(StringBuilder page, MovieReportItem movie, int index, int y) {
-        if (index % 2 == 0) {
-            appendRect(page, TABLE_X, y - 7, TABLE_WIDTH, TABLE_ROW_HEIGHT, "0.97 0.98 0.99", true);
+        appendText(page, String.valueOf(index), LEFT_MARGIN + 16, topY - 22, 12, "/F1", "0.23 0.51 0.96");
+        int titleX = LEFT_MARGIN + 48;
+        int titleY = topY - 19;
+        for (String line : row.titleLines()) {
+            appendText(page, line, titleX, titleY, 11, "/F1", "0.08 0.12 0.18");
+            titleY -= 13;
         }
-        appendRect(page, TABLE_X, y - 7, TABLE_WIDTH, 1, "0.88 0.91 0.95", true);
-        appendText(page, String.valueOf(index), TABLE_X + 12, y, 9, "/F2", "0.24 0.28 0.34");
-        appendText(page, truncate(blankToDefault(movie.title(), "Untitled"), 32), TABLE_X + 42, y, 9, "/F2", "0.08 0.12 0.18");
-        appendText(page, valueOrDash(movie.releaseYear()), TABLE_X + 270, y, 9, "/F2", "0.24 0.28 0.34");
-        appendText(page, truncate(blankToDefault(movie.type(), "-"), 8), TABLE_X + 320, y, 9, "/F2", "0.24 0.28 0.34");
-        appendText(page, formatRating(movie.averageRating()), TABLE_X + 380, y, 9, "/F1", "0.08 0.12 0.18");
-        appendText(page, valueOrDash(movie.userRating()), TABLE_X + 430, y, 9, "/F1", "0.08 0.12 0.18");
-        appendText(page, truncate(blankToDefault(movie.reviewContent(), ""), 12), TABLE_X + 480, y, 9, "/F2", "0.24 0.28 0.34");
+
+        int metaX = 520;
+        appendText(page, "Rok: " + valueOrDash(movie.releaseYear()), metaX, topY - 20, 9, "/F2", "0.30 0.34 0.40");
+        appendText(page, "Typ: " + blankToDefault(movie.type(), "-"), metaX + 82, topY - 20, 9, "/F2", "0.30 0.34 0.40");
+        appendText(page, "Srednia: " + formatRating(movie.averageRating()), metaX + 165, topY - 20, 9, "/F1", "0.08 0.12 0.18");
+        appendText(page, "Moja: " + valueOrDash(movie.userRating()), metaX + 255, topY - 20, 9, "/F1", "0.08 0.12 0.18");
+
+        int reviewY = titleY - 5;
+        appendText(page, "Recenzja:", titleX, reviewY, 8, "/F1", "0.38 0.43 0.50");
+        reviewY -= 12;
+        for (String line : row.reviewLines()) {
+            appendText(page, line, titleX, reviewY, 8, "/F2", "0.24 0.28 0.34");
+            reviewY -= 10;
+        }
     }
 
     private void appendText(StringBuilder page, String text, int x, int y, int fontSize, String font) {
@@ -111,7 +163,7 @@ public class PdfReportGenerator {
         page.append(color).append(" rg BT ")
                 .append(font).append(" ").append(fontSize).append(" Tf ")
                 .append(x).append(" ").append(y)
-                .append(" Td (").append(escapePdfText(text)).append(") Tj ET\n");
+                .append(" Td (").append(escapePdfText(toPdfSafe(text))).append(") Tj ET\n");
     }
 
     private void appendRect(StringBuilder page, int x, int y, int width, int height, String color, boolean fill) {
@@ -122,10 +174,10 @@ public class PdfReportGenerator {
 
     private byte[] buildPdf(List<String> pageContents) {
         List<byte[]> objects = new ArrayList<>();
-        objects.add("<< /Type /Catalog /Pages 2 0 R >>".getBytes(StandardCharsets.UTF_8));
-        objects.add(buildPagesObject(pageContents.size()).getBytes(StandardCharsets.UTF_8));
-        objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>".getBytes(StandardCharsets.UTF_8));
-        objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".getBytes(StandardCharsets.UTF_8));
+        objects.add("<< /Type /Catalog /Pages 2 0 R >>".getBytes(StandardCharsets.ISO_8859_1));
+        objects.add(buildPagesObject(pageContents.size()).getBytes(StandardCharsets.ISO_8859_1));
+        objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>".getBytes(StandardCharsets.ISO_8859_1));
+        objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".getBytes(StandardCharsets.ISO_8859_1));
 
         int firstPageObject = 5;
         int firstContentObject = firstPageObject + pageContents.size();
@@ -134,13 +186,13 @@ public class PdfReportGenerator {
             int contentObjectNumber = firstContentObject + i;
             objects.add(("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + PAGE_WIDTH + " " + PAGE_HEIGHT
                     + "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "
-                    + contentObjectNumber + " 0 R >>").getBytes(StandardCharsets.UTF_8));
+                    + contentObjectNumber + " 0 R >>").getBytes(StandardCharsets.ISO_8859_1));
         }
 
         for (String pageContent : pageContents) {
-            byte[] stream = pageContent.getBytes(StandardCharsets.UTF_8);
+            byte[] stream = pageContent.getBytes(StandardCharsets.ISO_8859_1);
             objects.add(("<< /Length " + stream.length + " >>\nstream\n"
-                    + pageContent + "endstream").getBytes(StandardCharsets.UTF_8));
+                    + pageContent + "endstream").getBytes(StandardCharsets.ISO_8859_1));
         }
 
         return writePdf(objects);
@@ -179,11 +231,11 @@ public class PdfReportGenerator {
     }
 
     private void write(ByteArrayOutputStream output, String text) {
-        output.writeBytes(text.getBytes(StandardCharsets.UTF_8));
+        output.writeBytes(text.getBytes(StandardCharsets.ISO_8859_1));
     }
 
     private String blankToDefault(String value, String defaultValue) {
-        return value == null || value.isBlank() ? defaultValue : value;
+        return value == null || value.isBlank() ? defaultValue : value.trim();
     }
 
     private String valueOrDash(Integer value) {
@@ -203,17 +255,60 @@ public class PdfReportGenerator {
         return String.format(Locale.ROOT, "%.1f", average);
     }
 
-    private String truncate(String value, int maxLength) {
-        return value.length() <= maxLength ? value : value.substring(0, maxLength - 3) + "...";
+    private long countUserRatings(List<MovieReportItem> movies) {
+        return movies.stream().filter(movie -> movie.userRating() != null).count();
     }
 
-    private String normalizeText(String text) {
-        return text == null ? "" : text;
+    private long countReviews(List<MovieReportItem> movies) {
+        return movies.stream().filter(movie -> movie.reviewContent() != null && !movie.reviewContent().isBlank()).count();
+    }
+
+    private List<String> wrapText(String raw, int maxChars) {
+        String text = toPdfSafe(blankToDefault(raw, ""));
+        List<String> lines = new ArrayList<>();
+        for (String paragraph : text.split("\\R")) {
+            String remaining = paragraph.trim();
+            if (remaining.isEmpty()) {
+                lines.add("");
+                continue;
+            }
+            while (remaining.length() > maxChars) {
+                int splitAt = remaining.lastIndexOf(' ', maxChars);
+                if (splitAt < maxChars / 2) {
+                    splitAt = maxChars;
+                }
+                lines.add(remaining.substring(0, splitAt).trim());
+                remaining = remaining.substring(splitAt).trim();
+            }
+            if (!remaining.isEmpty()) {
+                lines.add(remaining);
+            }
+        }
+        return lines.isEmpty() ? List.of("") : lines;
+    }
+
+    private String safeLine(String value, int maxChars) {
+        String safe = toPdfSafe(blankToDefault(value, ""));
+        return safe.length() <= maxChars ? safe : safe.substring(0, Math.max(0, maxChars - 3)) + "...";
     }
 
     private String escapePdfText(String text) {
         return text.replace("\\", "\\\\")
                 .replace("(", "\\(")
                 .replace(")", "\\)");
+    }
+
+    private String toPdfSafe(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text
+                .replace('ą', 'a').replace('ć', 'c').replace('ę', 'e').replace('ł', 'l')
+                .replace('ń', 'n').replace('ó', 'o').replace('ś', 's').replace('ż', 'z').replace('ź', 'z')
+                .replace('Ą', 'A').replace('Ć', 'C').replace('Ę', 'E').replace('Ł', 'L')
+                .replace('Ń', 'N').replace('Ó', 'O').replace('Ś', 'S').replace('Ż', 'Z').replace('Ź', 'Z')
+                .replace('–', '-').replace('—', '-').replace('•', '-')
+                .replace('“', '"').replace('”', '"').replace('„', '"')
+                .replace('’', '\'').replace('‘', '\'');
     }
 }

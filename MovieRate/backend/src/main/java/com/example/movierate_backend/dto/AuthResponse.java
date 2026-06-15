@@ -11,6 +11,7 @@ public class AuthResponse {
     private String role;
     private String createdAt;
     private String profilePictureUrl;
+    private Boolean blocked = false;
     
     /**
      * Domyślny konstruktor niezbędny dla serializacji.
@@ -53,6 +54,11 @@ public class AuthResponse {
         this.role = role;
         this.createdAt = createdAt;
         this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public AuthResponse(Long userId, String message, String username, String email, String role, String createdAt, String profilePictureUrl, Boolean blocked) {
+        this(userId, message, username, email, role, createdAt, profilePictureUrl);
+        this.blocked = blocked;
     }
 
     /**
@@ -131,4 +137,7 @@ public class AuthResponse {
      * @param profilePictureUrl URL awatara
      */
     public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
+
+    public Boolean getBlocked() { return blocked; }
+    public void setBlocked(Boolean blocked) { this.blocked = blocked; }
 }

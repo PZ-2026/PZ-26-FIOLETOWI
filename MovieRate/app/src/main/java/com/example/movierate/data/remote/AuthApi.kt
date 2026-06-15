@@ -10,6 +10,9 @@ interface AuthApi {
     @POST("/api/auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
 
+    @GET("/api/auth/status")
+    suspend fun status(@Query("userId") userId: Long): Response<AuthResponse>
+
     @PUT("/api/auth/profile")
     suspend fun updateProfile(@Query("userId") userId: Long, @Body request: UpdateProfileRequest): Response<AuthResponse>
 }

@@ -61,16 +61,13 @@ public class AuthService {
             boolean match = BCrypt.checkpw(request.getPassword(), user.getPasswordHash());
 
             if (match) {
+                if (Boolean.TRUE.equals(user.getBlocked())) {
+                    logger.warn("Login blocked because account is disabled email={}", maskedEmail);
+                    throw new IllegalStateException("Konto jest zablokowane");
+                }
+
                 logger.info("User login successful email={} role={}", maskedEmail, user.getRole());
-                return new AuthResponse(
-                        user.getId(),
-                        "Login successful",
-                        user.getUsername(),
-                        user.getEmail(),
-                        user.getRole(),
-                        user.getCreatedAt().toString(),
-                        user.getProfilePictureUrl()
-                );
+                return toAuthResponse(user, "Login successful");
             }
 
             logger.warn("Login failed because password did not match email={}", maskedEmail);
@@ -126,14 +123,30 @@ public class AuthService {
             throw exception;
         }
 
+        return toAuthResponse(savedUser, "Registration successful");
+    }
+
+    public AuthResponse getActiveUserStatus(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Użytkownik nie znaleziony"));
+
+        if (Boolean.TRUE.equals(user.getBlocked())) {
+            throw new IllegalStateException("Konto jest zablokowane");
+        }
+
+        return toAuthResponse(user, "Session active");
+    }
+
+    public AuthResponse toAuthResponse(User user, String message) {
         return new AuthResponse(
-                savedUser.getId(),
-                "Registration successful",
-                savedUser.getUsername(),
-                savedUser.getEmail(),
-                savedUser.getRole(),
-                savedUser.getCreatedAt().toString(),
-                null
+                user.getId(),
+                message,
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole(),
+                user.getCreatedAt() != null ? user.getCreatedAt().toString() : null,
+                user.getProfilePictureUrl(),
+                Boolean.TRUE.equals(user.getBlocked())
         );
     }
 

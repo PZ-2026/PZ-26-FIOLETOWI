@@ -58,7 +58,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     onRegisterClick: () -> Unit,
-    onLoginSuccess: (AuthResponse) -> Unit
+    onLoginSuccess: (AuthResponse) -> Unit,
+    onContinueAsGuest: () -> Unit = {}
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -178,6 +179,23 @@ fun LoginScreen(
                             fontSize = 16.sp
                         )
                     }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                    onClick = onContinueAsGuest,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Kontynuuj jako gość",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
                 }
 
                 if (errorMessage.isNotEmpty()) {

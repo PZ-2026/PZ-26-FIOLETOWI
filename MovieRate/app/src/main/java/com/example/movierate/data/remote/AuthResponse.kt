@@ -7,5 +7,6 @@ data class AuthResponse(
     val email: String,
     val role: String,
     val createdAt: String? = null,
-    val profilePictureUrl: String? = null
+    val profilePictureUrl: String? = null,
+    val blocked: Boolean = false
 )

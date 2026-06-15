@@ -36,7 +36,7 @@ val PrimaryGradientBrush = Brush.linearGradient(colors = listOf(GradientStart, G
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false) {
+fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false, isGuest: Boolean = false) {
     var menuExpanded by remember { mutableStateOf(false) }
 
     TopAppBar(
@@ -56,7 +56,8 @@ fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, is
                     onDismiss = { menuExpanded = false },
                     onLogout = onLogout,
                     navController = navController,
-                    isLoggedIn = isLoggedIn
+                    isLoggedIn = isLoggedIn,
+                    isGuest = isGuest
                 )
             }
         },
@@ -65,7 +66,7 @@ fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, is
 }
 
 @Composable
-fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false) {
+fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false, isGuest: Boolean = false) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -110,19 +111,26 @@ fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: N
                         onDismiss() 
                     }
                     Spacer(modifier = Modifier.height(24.dp))
-                    MenuItemText("Moje Listy", Icons.Default.List) {
-                        navController?.navigate("lists")
+                    MenuItemText("Szukaj", Icons.Default.Search) {
+                        navController?.navigate("search")
                         onDismiss()
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
-                    MenuItemText("Profil", Icons.Default.Person) {
-                        navController?.navigate("profile")
-                        onDismiss()
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                    MenuItemText("Panel Admin", Icons.Default.Lock) {
-                        navController?.navigate("admin")
-                        onDismiss()
+                    if (!isGuest) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        MenuItemText("Moje Listy", Icons.Default.List) {
+                            navController?.navigate("lists")
+                            onDismiss()
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                        MenuItemText("Profil", Icons.Default.Person) {
+                            navController?.navigate("profile")
+                            onDismiss()
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                        MenuItemText("Panel Admin", Icons.Default.Lock) {
+                            navController?.navigate("admin")
+                            onDismiss()
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -131,17 +139,6 @@ fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: N
                     Divider(color = Color(0xFF1E2532), thickness = 1.dp)
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Motyw", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Icon(Icons.Default.Star, contentDescription = "Motyw", tint = Color.Gray, modifier = Modifier.size(18.dp)) // Using Star instead of moon
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
                     Button(
                         onClick = {
                             onDismiss()
@@ -177,12 +174,15 @@ fun MenuItemText(text: String, icon: androidx.compose.ui.graphics.vector.ImageVe
 }
 
 @Composable
-fun MovieRateBottomNav(currentRoute: String = "home", navController: NavController? = null) {
+fun MovieRateBottomNav(currentRoute: String = "home", navController: NavController? = null, isGuest: Boolean = false) {
     NavigationBar(
         containerColor = DarkBackground,
         contentColor = Color.Gray
     ) {
-        val items = listOf(
+        val items = if (isGuest) listOf(
+            Triple("home", "Główna", Icons.Default.Home),
+            Triple("search", "Szukaj", Icons.Default.Search)
+        ) else listOf(
             Triple("home", "Główna", Icons.Default.Home),
             Triple("search", "Szukaj", Icons.Default.Search),
             Triple("lists", "Listy", Icons.Default.List),

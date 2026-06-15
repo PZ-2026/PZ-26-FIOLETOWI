@@ -175,20 +175,21 @@ public class MovieService {
      * @return lista pasujących kandydatów
      */
     public List<MovieResponse> searchMovies(String query, String type, Integer year) {
-        StringBuilder sql = new StringBuilder(baseMovieQuery());
+        StringBuilder sql = new StringBuilder("SELECT * FROM (");
+        sql.append(baseMovieQuery()).append(") filtered");
         sql.append(" WHERE 1=1");
 
         if (query != null && !query.isBlank()) {
-            sql.append(" AND LOWER(m.title) LIKE LOWER(?)");
+            sql.append(" AND LOWER(filtered.title) LIKE LOWER(?)");
         }
         if (type != null && !type.isBlank()) {
-            sql.append(" AND m.type = ?");
+            sql.append(" AND filtered.type = ?");
         }
         if (year != null) {
-            sql.append(" AND m.release_year = ?");
+            sql.append(" AND filtered.release_year = ?");
         }
 
-        sql.append(" ORDER BY m.title ASC");
+        sql.append(" ORDER BY filtered.title ASC");
 
         List<Object> params = new ArrayList<>();
         if (query != null && !query.isBlank()) {
@@ -273,7 +274,7 @@ public class MovieService {
                 FROM reviews rv
                 JOIN users u ON u.id = rv.user_id
                 JOIN movies m ON m.id = rv.movie_id
-                WHERE rv.movie_id = ? AND rv.is_deleted = FALSE
+                WHERE rv.movie_id = ? AND rv.is_deleted = FALSE AND rv.is_approved = TRUE
                 ORDER BY rv.created_at DESC
                 """;
         return jdbcTemplate.query(sql, (rs, rowNum) ->
@@ -298,7 +299,7 @@ public class MovieService {
      */
     public void addReview(Long movieId, Long userId, String content) {
         jdbcTemplate.update(
-            "INSERT INTO reviews (user_id, movie_id, content) VALUES (?, ?, ?)",
+            "INSERT INTO reviews (user_id, movie_id, content, is_approved) VALUES (?, ?, ?, FALSE)",
             userId, movieId, content);
     }
 

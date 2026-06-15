@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS reviews (
     movie_id INT NOT NULL,
     content TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted BOOLEAN DEFAULT FALSE
+    is_deleted BOOLEAN DEFAULT FALSE,
+    is_approved BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS user_lists (
@@ -109,3 +110,5 @@ ALTER TABLE movie_cast ADD CONSTRAINT fk_movie_cast_role FOREIGN KEY (role_id) R
 
 -- Add image_url column to movies if it doesn't exist (for existing databases)
 ALTER TABLE movies ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT TRUE;
+UPDATE reviews SET is_approved = TRUE WHERE is_approved IS NULL;

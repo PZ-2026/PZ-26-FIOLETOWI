@@ -184,6 +184,7 @@ fun AdminMoviesContent() {
     var releaseYear by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var imageUrl by remember { mutableStateOf("") }
+    var actorNames by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("Film") }
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -286,6 +287,20 @@ fun AdminMoviesContent() {
     Spacer(modifier = Modifier.height(16.dp))
     
     AdminTextField("Opis", "Wprowadź opis filmu", minLines = 3, value = description, onValueChange = { description = it })
+    Spacer(modifier = Modifier.height(16.dp))
+    AdminTextField(
+        "Aktorzy",
+        "Np. Leonardo DiCaprio, Tom Hanks, Zendaya",
+        minLines = 2,
+        value = actorNames,
+        onValueChange = { actorNames = it }
+    )
+    Text(
+        "Oddziel aktorów przecinkami",
+        color = Color.Gray,
+        fontSize = 12.sp,
+        modifier = Modifier.padding(top = 4.dp)
+    )
     Spacer(modifier = Modifier.height(16.dp))
     
     // Image picker (like profile picture)
@@ -449,7 +464,11 @@ fun AdminMoviesContent() {
                         releaseYear = yearInt,
                         type = apiType,
                         genreIds = selectedGenreIds.toList(),
-                        imageUrl = imageUrl.trim().ifEmpty { null }
+                        imageUrl = imageUrl.trim().ifEmpty { null },
+                        actorNames = actorNames
+                            .split(",")
+                            .map { it.trim() }
+                            .filter { it.isNotEmpty() }
                     )
                     val response = if (editingMovieId != null) {
                         RetrofitClient.adminApi.updateMovie(editingMovieId!!, request)
@@ -463,6 +482,7 @@ fun AdminMoviesContent() {
                         releaseYear = ""
                         description = ""
                         imageUrl = ""
+                        actorNames = ""
                         selectedType = "Film"
                         selectedGenreIds = emptySet()
                         editingMovieId = null
@@ -510,6 +530,7 @@ fun AdminMoviesContent() {
             releaseYear = ""
             description = ""
             imageUrl = ""
+            actorNames = ""
             selectedType = "Film"
             selectedGenreIds = emptySet()
             errorMessage = null
@@ -587,6 +608,7 @@ fun AdminMoviesContent() {
                                 releaseYear = movie.releaseYear?.toString() ?: ""
                                 description = movie.description ?: ""
                                 imageUrl = movie.imageUrl ?: ""
+                                actorNames = ""
                                 selectedType = when (movie.type) {
                                     "SERIES" -> "Serial"
                                     else -> "Film"
@@ -603,6 +625,13 @@ fun AdminMoviesContent() {
                                                 name != null && movie.genres?.contains(name) == true
                                             }.mapNotNull { (it["id"] as? Number)?.toLong() }
                                             selectedGenreIds = matchedIds.toSet()
+                                        }
+                                        val castResp = RetrofitClient.moviesApi.getMovieCast(movie.id)
+                                        if (castResp.isSuccessful) {
+                                            actorNames = castResp.body().orEmpty()
+                                                .filter { it.role == "ACTOR" }
+                                                .map { it.name }
+                                                .joinToString(", ")
                                         }
                                     } catch (_: Exception) { }
                                 }
