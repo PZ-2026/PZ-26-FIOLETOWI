@@ -258,3 +258,7 @@
 2026-06-15 20:23:31.747 [http-nio-0.0.0.0-8080-exec-5] DEBUG c.e.m.service.AuthService - Normalized login email=b***@example.com
 2026-06-15 20:23:31.748 [http-nio-0.0.0.0-8080-exec-5] TRACE c.e.m.service.AuthService - Found user account for login email=b***@example.com
 2026-06-15 20:23:31.847 [http-nio-0.0.0.0-8080-exec-5] WARN  c.e.m.service.AuthService - Login blocked because account is disabled email=b***@example.com
+2026-06-15 21:24:01.709 [http-nio-0.0.0.0-8080-exec-10] TRACE c.e.m.service.AuthService - Received login request
+2026-06-15 21:24:01.709 [http-nio-0.0.0.0-8080-exec-10] DEBUG c.e.m.service.AuthService - Normalized login email=a***@example.com
+2026-06-15 21:24:02.591 [http-nio-0.0.0.0-8080-exec-10] TRACE c.e.m.service.AuthService - Found user account for login email=a***@example.com
+2026-06-15 21:24:02.707 [http-nio-0.0.0.0-8080-exec-10] INFO  c.e.m.service.AuthService - User login successful email=a***@example.com role=ADMIN

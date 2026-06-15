@@ -78,7 +78,7 @@ fun AdminScreen(modifier: Modifier = Modifier, navController: androidx.navigatio
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = {
                     navController?.navigate("home") {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo("home") { inclusive = true }
                     }
                 }) {
                     Icon(Icons.Default.Home, contentDescription = "Strona główna", tint = TextBlue)

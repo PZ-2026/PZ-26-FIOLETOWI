@@ -119,7 +119,7 @@ fun AppNavigation() {
                         isGuest = false
                         clearUserSession(context)
                         navController.navigate("login") {
-                            popUpTo(0) { inclusive = true }
+                            popUpTo("login") { inclusive = true }
                         }
                         break
                     } else if (response.isSuccessful) {
@@ -146,7 +146,7 @@ fun AppNavigation() {
                         isGuest = false
                         clearUserSession(context)
                         navController.navigate("login") {
-                            popUpTo(0) { inclusive = true }
+                            popUpTo("login") { inclusive = true }
                         }
                     },
                     navController = navController,
@@ -311,7 +311,7 @@ fun AppNavigation() {
                             isGuest = false
                             clearUserSession(context)
                             navController.navigate("login") {
-                                popUpTo(0) { inclusive = true }
+                                popUpTo("login") { inclusive = true }
                             }
                         },
                         onUserUpdated = { updatedUser ->
