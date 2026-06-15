@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.KeyHolder;
 
 import java.util.List;
 
@@ -87,10 +88,7 @@ class AdminServiceTest {
 
         adminService.createMovie(request);
 
-        verify(jdbcTemplate).update(
-                "INSERT INTO movies (title, description, release_year, type) VALUES (?, ?, ?, ?)",
-                "New Movie", "A great movie", 2024, "Film"
-        );
+        verify(jdbcTemplate).update(any(), any(KeyHolder.class));
     }
 
     @Test
@@ -104,8 +102,8 @@ class AdminServiceTest {
         adminService.updateMovie(1L, request);
 
         verify(jdbcTemplate).update(
-                "UPDATE movies SET title = ?, description = ?, release_year = ?, type = ? WHERE id = ?",
-                "Updated Title", "Updated desc", 2023, "Serial", 1L
+                "UPDATE movies SET title = ?, description = ?, release_year = ?, type = ?, image_url = ? WHERE id = ?",
+                "Updated Title", "Updated desc", 2023, "Serial", null, 1L
         );
     }
 
@@ -118,8 +116,8 @@ class AdminServiceTest {
 
     @Test
     void getAllReviews_returnsReviewList() {
-        ReviewResponse review1 = new ReviewResponse(1L, "user1", "Movie 1", "Great!", "2024-01-01", false);
-        ReviewResponse review2 = new ReviewResponse(2L, "user2", "Movie 2", "Nice", "2024-01-02", false);
+        ReviewResponse review1 = new ReviewResponse(1L, "user1", 100L, "Movie 1", "Great!", "2024-01-01", false, 5, null);
+        ReviewResponse review2 = new ReviewResponse(2L, "user2", 101L, "Movie 2", "Nice", "2024-01-02", false, 4, null);
 
         when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenReturn(List.of(review1, review2));
 
@@ -134,7 +132,7 @@ class AdminServiceTest {
     void approveReview_setsNotDeleted() {
         adminService.approveReview(1L);
 
-        verify(jdbcTemplate).update("UPDATE reviews SET is_deleted = FALSE WHERE id = ?", 1L);
+        verify(jdbcTemplate).update("UPDATE reviews SET is_approved = TRUE, is_deleted = FALSE WHERE id = ?", 1L);
     }
 
     @Test

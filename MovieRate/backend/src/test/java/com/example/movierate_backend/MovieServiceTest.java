@@ -28,8 +28,8 @@ class MovieServiceTest {
 
     @Test
     void getAllMovies_returnsMovieList() {
-        MovieResponse movie1 = new MovieResponse(1L, "Test Movie", "Description", 2024, "Film", 8.5);
-        MovieResponse movie2 = new MovieResponse(2L, "Another Movie", "Desc", 2023, "Serial", 7.2);
+        MovieResponse movie1 = new MovieResponse(1L, "Test Movie", "Description", 2024, "Film", 8.5, null, null);
+        MovieResponse movie2 = new MovieResponse(2L, "Another Movie", "Desc", 2023, "Serial", 7.2, null, null);
 
         when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenReturn(List.of(movie1, movie2));
 
@@ -42,7 +42,7 @@ class MovieServiceTest {
 
     @Test
     void getTopRatedMovies_returnsLimitedMovies() {
-        MovieResponse movie = new MovieResponse(1L, "Top Movie", "Great", 2024, "Film", 9.5);
+        MovieResponse movie = new MovieResponse(1L, "Top Movie", "Great", 2024, "Film", 9.5, null, null);
 
         when(jdbcTemplate.query(anyString(), any(RowMapper.class), anyInt())).thenReturn(List.of(movie));
 
@@ -55,7 +55,7 @@ class MovieServiceTest {
 
     @Test
     void searchMovies_withQueryOnly_returnsFilteredMovies() {
-        MovieResponse movie = new MovieResponse(1L, "Found Movie", "Desc", 2024, "Film", 8.0);
+        MovieResponse movie = new MovieResponse(1L, "Found Movie", "Desc", 2024, "Film", 8.0, null, null);
 
         when(jdbcTemplate.query(anyString(), any(RowMapper.class), any(Object[].class)))
                 .thenReturn(List.of(movie));
@@ -68,7 +68,7 @@ class MovieServiceTest {
 
     @Test
     void searchMovies_withAllFilters_returnsFilteredMovies() {
-        MovieResponse movie = new MovieResponse(1L, "Inception", "Dreams", 2010, "Film", 9.0);
+        MovieResponse movie = new MovieResponse(1L, "Inception", "Dreams", 2010, "Film", 9.0, null, null);
 
         when(jdbcTemplate.query(anyString(), any(RowMapper.class), any(Object[].class)))
                 .thenReturn(List.of(movie));

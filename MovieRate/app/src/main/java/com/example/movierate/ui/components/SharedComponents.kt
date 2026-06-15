@@ -36,7 +36,7 @@ val PrimaryGradientBrush = Brush.linearGradient(colors = listOf(GradientStart, G
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false, isGuest: Boolean = false) {
+fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false, isGuest: Boolean = false, isAdmin: Boolean = false) {
     var menuExpanded by remember { mutableStateOf(false) }
 
     TopAppBar(
@@ -57,7 +57,8 @@ fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, is
                     onLogout = onLogout,
                     navController = navController,
                     isLoggedIn = isLoggedIn,
-                    isGuest = isGuest
+                    isGuest = isGuest,
+                    isAdmin = isAdmin
                 )
             }
         },
@@ -66,7 +67,7 @@ fun MainTopAppBar(onLogout: () -> Unit, navController: NavController? = null, is
 }
 
 @Composable
-fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false, isGuest: Boolean = false) {
+fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: NavController? = null, isLoggedIn: Boolean = false, isGuest: Boolean = false, isAdmin: Boolean = false) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -126,10 +127,12 @@ fun AppMenuOverlay(onDismiss: () -> Unit, onLogout: () -> Unit, navController: N
                             navController?.navigate("profile")
                             onDismiss()
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        MenuItemText("Panel Admin", Icons.Default.Lock) {
-                            navController?.navigate("admin")
-                            onDismiss()
+                        if (isAdmin) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            MenuItemText("Panel Admin", Icons.Default.Lock) {
+                                navController?.navigate("admin")
+                                onDismiss()
+                            }
                         }
                     }
 

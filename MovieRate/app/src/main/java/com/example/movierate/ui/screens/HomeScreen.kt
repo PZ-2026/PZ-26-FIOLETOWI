@@ -278,24 +278,6 @@ fun HeroSection(onNavigateToSearch: () -> Unit = {}) {
                 color = Color.White,
                 fontSize = 14.sp
             )
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Button(
-                    onClick = onNavigateToSearch,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A3441)),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Rozpocznij za darmo", color = Color.White)
-                }
-                OutlinedButton(
-                    onClick = onNavigateToSearch,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                    border = BorderStroke(1.dp, Color(0xFF9400D3)),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Top Rated")
-                }
-            }
         }
     }
 }

@@ -58,7 +58,7 @@ class ListServiceTest {
 
     @Test
     void getListItems_returnsItems() {
-        UserListItemResponse item = new UserListItemResponse(1L, 10L, "Breaking Bad", 2008, "Serial", 9.5, 1);
+        UserListItemResponse item = new UserListItemResponse(1L, 10L, "Breaking Bad", 2008, "Serial", 9.5, 1, null);
 
         when(jdbcTemplate.query(anyString(), any(RowMapper.class), anyLong()))
                 .thenReturn(List.of(item));

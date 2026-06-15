@@ -106,6 +106,10 @@ fun AppNavigation() {
     val isFullScreen = currentRoute == "login" || currentRoute == "register" || currentRoute == "movie_detail"
     val startDest = if (currentUser != null || isGuest) "home" else "login"
 
+    LaunchedEffect(currentUser) {
+        RetrofitClient.currentUserId = currentUser?.userId
+    }
+
     LaunchedEffect(currentUser?.userId, isGuest) {
         if (currentUser == null || isGuest) return@LaunchedEffect
 
@@ -151,7 +155,8 @@ fun AppNavigation() {
                     },
                     navController = navController,
                     isLoggedIn = currentUser != null,
-                    isGuest = isGuest
+                    isGuest = isGuest,
+                    isAdmin = currentUser?.role == "ADMIN"
                 )
             }
         },

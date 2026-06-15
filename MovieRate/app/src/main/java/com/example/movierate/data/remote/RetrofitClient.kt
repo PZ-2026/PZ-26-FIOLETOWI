@@ -2,6 +2,7 @@ package com.example.movierate.data.remote
 
 import android.content.Context
 import android.content.SharedPreferences
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -12,6 +13,7 @@ object RetrofitClient {
 
     private var appContext: Context? = null
     private var _baseUrl: String = DEFAULT_BASE_URL
+    var currentUserId: Long? = null
 
     private var retrofit: Retrofit = createRetrofit()
     private var _api: AuthApi = retrofit.create(AuthApi::class.java)
@@ -22,8 +24,19 @@ object RetrofitClient {
     private var _adminApi: AdminApi = retrofit.create(AdminApi::class.java)
 
     private fun createRetrofit(): Retrofit {
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val requestBuilder = chain.request().newBuilder()
+                currentUserId?.let {
+                    requestBuilder.addHeader("X-User-Id", it.toString())
+                }
+                chain.proceed(requestBuilder.build())
+            }
+            .build()
+
         return Retrofit.Builder()
             .baseUrl(_baseUrl)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }

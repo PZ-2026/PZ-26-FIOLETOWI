@@ -5,6 +5,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class DatabaseSeeder implements CommandLineRunner {
@@ -22,6 +24,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        deduplicateUserLists();
         if (!seedEnabled) {
             return;
         }
@@ -1299,5 +1302,60 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     private SeedMovieRef movie(String title, int releaseYear, String type) {
         return new SeedMovieRef(title, releaseYear, type);
+    }
+
+    private void deduplicateUserLists() {
+        List<Map<String, Object>> allLists = jdbcTemplate.queryForList(
+            "SELECT id, user_id, name, type FROM user_lists ORDER BY user_id, type, name, id ASC"
+        );
+
+        java.util.Map<String, Long> primarySystemLists = new java.util.HashMap<>();
+        java.util.Map<String, Long> primaryNameLists = new java.util.HashMap<>();
+
+        for (Map<String, Object> list : allLists) {
+            Long id = ((Number) list.get("id")).longValue();
+            Long userId = ((Number) list.get("user_id")).longValue();
+            String name = (String) list.get("name");
+            String type = (String) list.get("type");
+
+            String systemKey = null;
+            if (type != null && !"CUSTOM".equals(type)) {
+                systemKey = userId + ":" + type;
+            }
+            String nameKey = userId + ":" + name.toLowerCase().trim();
+
+            Long targetListId = null;
+
+            if (systemKey != null) {
+                if (!primarySystemLists.containsKey(systemKey)) {
+                    primarySystemLists.put(systemKey, id);
+                } else {
+                    targetListId = primarySystemLists.get(systemKey);
+                }
+            }
+
+            if (targetListId == null) {
+                if (!primaryNameLists.containsKey(nameKey)) {
+                    primaryNameLists.put(nameKey, id);
+                } else {
+                    targetListId = primaryNameLists.get(nameKey);
+                }
+            }
+
+            if (targetListId != null && !targetListId.equals(id)) {
+                List<Long> movieIds = jdbcTemplate.queryForList(
+                    "SELECT movie_id FROM user_list_items WHERE list_id = ?",
+                    Long.class, id
+                );
+                for (Long movieId : movieIds) {
+                    jdbcTemplate.update(
+                        "INSERT INTO user_list_items (list_id, movie_id, position) VALUES (?, ?, 0) ON CONFLICT DO NOTHING",
+                        targetListId, movieId
+                    );
+                }
+                jdbcTemplate.update("DELETE FROM user_list_items WHERE list_id = ?", id);
+                jdbcTemplate.update("DELETE FROM user_lists WHERE id = ?", id);
+            }
+        }
     }
 }
